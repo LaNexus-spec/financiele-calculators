@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+
+<html lang="nl">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Financiële Calculator – Sandra</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+<style>
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f2; color: #1a1a1a; padding: 24px 16px; }
+
+  .wrap { max-width: 680px; margin: 0 auto; }
+
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 1.25rem; color: #111; }
+
+
+
+  /* Month nav */
+
+  .mbar { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+
+  .mbar h2 { flex: 1; font-size: 17px; font-weight: 500; text-transform: capitalize; }
+
+  .mbar button { background: none; border: 1px solid #ccc; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 14px; }
+
+  .mbar button:hover { background: #eee; }
+
+
+
+  /* Summary */
+
+  .sum3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+
+  .sc { background: #ececea; border-radius: 8px; padding: 10px 12px; }
+
+  .sc .sl { font-size: 11px; color: #666; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .05em; }
+
+  .sc .sv { font-size: 16px; font-weight: 500; }
+
+  .pos { color: #0f6e56; }
+
+  .neg { color: #a32d2d; }
+
+
+
+  /* Cards */
+
+  .card { background: #fff; border: 1px solid #e0e0dd; border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; }
+
+  .card h3 { font-size: 12px; font-weight: 700; color: #111; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .07em; }
+
+
+
+  /* Field rows */
+
+  .fr { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px solid #f0f0ee; }
+
+  .fr:last-of-type { border-bottom: none; }
+
+  .fr label { flex: 1; font-size: 13px; }
+
+  .fr label.dim { color: #888; font-size: 12px; }
+
+
+
+  /* Input wrap */
+
+  .iw { position: relative; width: 110px; flex-shrink: 0; }
+
+  .iw span { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #888; pointer-events: none; }
+
+  .iw input { padding: 4px 6px 4px 20px; width: 100%; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; text-align: right; background: #fafafa; }
+
+  .iw input:focus { outline: none; border-color: #888; background: #fff; }
+
+
+
+  /* Section headers */
+
+  .shd { font-size: 11px; font-weight: 700; color: #333; text-transform: uppercase; letter-spacing: .05em; padding: 8px 0 3px; margin-top: 4px; border-bottom: 1px solid #eee; }
+
+
+
+  /* Card totals */
+
+  .ctot { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; margin-top: 6px; border-top: 1px solid #ddd; }
+
+  .ctot .cl { font-size: 12px; font-weight: 700; color: #333; }
+
+  .ctot .cv { font-size: 14px; font-weight: 700; }
+
+
+
+  /* Tracker grid */
+
+  .tgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+
+  .tcard { background: #fff; border: 1px solid #e0e0dd; border-radius: 12px; padding: 14px 18px; }
+
+  .tcard h3 { font-size: 12px; font-weight: 700; color: #111; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .07em; }
+
+  .prog-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+
+  .prog-track { height: 5px; background: #ddd; border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+
+  .prog-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+
+  .dev-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0 0; }
+
+
+
+  /* Over box */
+
+  .over-box { border-radius: 12px; padding: 20px 24px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+
+  .over-box.pos-bg { background: #e1f5ee; border: 1px solid #9fe1cb; }
+
+  .over-box.neg-bg { background: #fcebeb; border: 1px solid #f7c1c1; }
+
+  .over-box .ov { font-size: 30px; font-weight: 500; }
+
+
+
+  /* Breakdown rows */
+
+  .bdr { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #f0f0ee; font-size: 13px; }
+
+  .bdr:last-of-type { border-bottom: none; }
+
+
+
+  /* Saldo grid */
+
+  .sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .si { padding: 10px; background: #f5f5f2; border-radius: 8px; }
+
+  .si .sil { font-size: 12px; color: #666; margin-bottom: 3px; }
+
+  .si .siv { font-size: 15px; font-weight: 500; }
+
+  .si .sii { font-size: 11px; color: #888; margin-top: 2px; }
+
+
+
+  /* Abonnement toggle */
+
+  .abo-btn { background: none; border: none; cursor: pointer; font-size: 12px; color: #666; display: flex; align-items: center; gap: 6px; padding: 6px 0; width: 100%; text-align: left; }
+
+  .abo-btn:hover { color: #111; }
+
+
+
+  /* Vorige maand highlight */
+
+  .vorige-hl { background: #e1f5ee; border-radius: 6px; padding: 5px 8px; margin-top: 4px; border-bottom: none !important; }
+
+
+
+  /* Chart */
+
+  .chart-wrap { position: relative; height: 200px; margin-top: 8px; }
+
+
+
+  /* Footer */
+
+  .footer { font-size: 11px; color: #aaa; text-align: right; margin-top: 4px; }
+
+
+
+  /* Starts grid */
+
+  .starts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+</style>
+
+</head>
+
+<body>
+
+<div class="wrap">
+
+  <h1>Financiële calculator Sandra</h1>
+
+
+
+  <div class="mbar">
+
+    <button onclick="shiftM(-1)">&#8249;</button>
+
+    <h2 id="mlbl"></h2>
+
+    <button onclick="shiftM(1)">&#8250;</button>
+
+  </div>
+
+
+
+  <div class="sum3">
+
+    <div class="sc"><p class="sl">Inkomsten</p><p class="sv" id="s-in">€ 0</p></div>
+
+    <div class="sc"><p class="sl">Uitgaven</p><p class="sv" id="s-uit">€ 0</p></div>
+
+    <div class="sc"><p class="sl">Over</p><p class="sv" id="s-over">€ 0</p></div>
+
+  </div>
+
+
+
+  <!-- Inkomsten -->
+
+  <div class="card">
+
+    <h3>Inkomsten</h3>
+
+    <div class="fr"><label>Vast salaris</label><div class="iw"><span>€</span><input type="number" id="f-sal" value="3150" min="0" step="1" oninput="go()"></div></div>
+
+    <div class="fr"><label>LaNexus</label><div class="iw"><span>€</span><input type="number" id="f-lan" value="1000" min="0" step="1" oninput="go()"></div></div>
+
+    <div class="fr vorige-hl"><label>Over vorige maand<br><span id="vnote" style="font-size:11px;color:#0f6e56"></span></label><div class="iw"><span>€</span><input type="number" id="f-vor" value="0" min="0" step="1" oninput="go()"></div></div>
+
+    <div class="ctot"><span class="cl">Totaal inkomsten</span><span class="cv" id="t-in">€ 0</span></div>
+
+  </div>
+
+
+
+  <!-- Vaste lasten -->
+
+  <div class="card">
+
+    <h3>Vaste lasten</h3>
+
+    <div class="shd">Wonen</div>
+
+    <div class="fr"><label>Syntrus</label><div class="iw"><span>€</span><input type="number" id="f-syn" value="568.30" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="fr"><label>VVE</label><div class="iw"><span>€</span><input type="number" id="f-vve" value="300.43" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="fr"><label>Gemeentelijke belastingen</label><div class="iw"><span>€</span><input type="number" id="f-gem" value="86.25" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="fr"><label>Noordelijk belastingkantoor</label><div class="iw"><span>€</span><input type="number" id="f-nbd" value="28.82" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="fr"><label>Diftar</label><div class="iw"><span>€</span><input type="number" id="f-dif" value="15.00" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="fr"><label>Centraal beheer</label><div class="iw"><span>€</span><input type="number" id="f-cb" value="31.27" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Verzekeringen</div>
+
+    <div class="fr"><label>Verzekeringen Boks Oolbekkink</label><div class="iw"><span>€</span><input type="number" id="f-vbo" value="62.00" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="fr"><label>FBTO</label><div class="iw"><span>€</span><input type="number" id="f-fbt" value="131.95" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="fr"><label>Auto verzekering</label><div class="iw"><span>€</span><input type="number" id="f-av" value="43.82" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="fr"><label>Monuta</label><div class="iw"><span>€</span><input type="number" id="f-mon" value="17.29" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Energie &amp; telefoon</div>
+
+    <div class="fr"><label>Budget Energie</label><div class="iw"><span>€</span><input type="number" id="f-bue" value="47.00" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="fr"><label>Odido</label><div class="iw"><span>€</span><input type="number" id="f-odi" value="48.94" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="fr"><label>Ben mobiele telefoon</label><div class="iw"><span>€</span><input type="number" id="f-ben" value="16.72" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Auto</div>
+
+    <div class="fr"><label>Autobelasting</label><div class="iw"><span>€</span><input type="number" id="f-abl" value="77.00" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Schulden &amp; leningen</div>
+
+    <div class="fr"><label>Afbetalen schuld verbouwing</label><div class="iw"><span>€</span><input type="number" id="f-afs" value="500.00" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="fr"><label>Persoonlijke lening</label><div class="iw"><span>€</span><input type="number" id="f-pl" value="600.00" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Sparen</div>
+
+    <div class="fr"><label>Vakantie sparen</label><div class="iw"><span>€</span><input type="number" id="f-vs" value="100.00" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="fr"><label>Algemeen sparen</label><div class="iw"><span>€</span><input type="number" id="f-as" value="100.00" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="ctot"><span class="cl">Subtotaal vaste lasten</span><span class="cv" id="t-vast-fixed">€ 0</span></div>
+
+  </div>
+
+
+
+  <!-- Trackers -->
+
+  <div class="tgrid">
+
+    <div class="tcard">
+
+      <h3>Boodschappen</h3>
+
+      <div class="prog-label"><span id="bood-spent" style="font-weight:500">€ 0</span><span style="color:#888">budget € 650</span></div>
+
+      <div class="prog-track"><div class="prog-fill" id="bood-bar" style="width:0%;background:#1D9E75"></div></div>
+
+      <div class="fr"><label class="dim">Week 1</label><div class="iw"><span>€</span><input type="number" id="f-bw1" value="150" min="0" step="1" oninput="go()"></div></div>
+
+      <div class="fr"><label class="dim">Week 2</label><div class="iw"><span>€</span><input type="number" id="f-bw2" value="150" min="0" step="1" oninput="go()"></div></div>
+
+      <div class="fr"><label class="dim">Week 3</label><div class="iw"><span>€</span><input type="number" id="f-bw3" value="150" min="0" step="1" oninput="go()"></div></div>
+
+      <div class="fr"><label class="dim">Week 4</label><div class="iw"><span>€</span><input type="number" id="f-bw4" value="150" min="0" step="1" oninput="go()"></div></div>
+
+      <div class="fr"><label class="dim">Week 5</label><div class="iw"><span>€</span><input type="number" id="f-bw5" value="50" min="0" step="1" oninput="go()"></div></div>
+
+      <div class="dev-row"><span style="color:#888">Afwijking</span><span id="bood-dev" style="font-weight:500"></span></div>
+
+    </div>
+
+    <div class="tcard">
+
+      <h3>Zakgeld</h3>
+
+      <div class="prog-label"><span id="zak-spent" style="font-weight:500">€ 0</span><span style="color:#888">budget € 850</span></div>
+
+      <div class="prog-track"><div class="prog-fill" id="zak-bar" style="width:0%;background:#1D9E75"></div></div>
+
+      <div class="fr"><label class="dim">Kapper</label><div class="iw"><span>€</span><input type="number" id="f-kap" value="50" min="0" step="1" oninput="go()"></div></div>
+
+      <div class="fr"><label class="dim">Mmooi</label><div class="iw"><span>€</span><input type="number" id="f-mmo" value="100" min="0" step="1" oninput="go()"></div></div>
+
+      <div class="fr"><label class="dim">Massage</label><div class="iw"><span>€</span><input type="number" id="f-mas" value="100" min="0" step="1" oninput="go()"></div></div>
+
+      <div class="fr"><label class="dim">Ibiza / vakantie</label><div class="iw"><span>€</span><input type="number" id="f-ibz" value="600" min="0" step="1" oninput="go()"></div></div>
+
+      <div class="fr"><label class="dim">Overig</label><div class="iw"><span>€</span><input type="number" id="f-zov" value="0" min="0" step="1" oninput="go()"></div></div>
+
+      <div class="dev-row"><span style="color:#888">Afwijking</span><span id="zak-dev" style="font-weight:500"></span></div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- Tanken -->
+
+  <div class="card">
+
+    <h3>Tanken</h3>
+
+    <div class="fr"><label>Totaal tanken</label><div class="iw"><span>€</span><input type="number" id="f-tank" value="300" min="0" step="1" oninput="go()"></div></div>
+
+    <div class="dev-row" style="padding-top:6px"><span style="color:#888">Afwijking t.o.v. budget (€ 300)</span><span id="tank-dev" style="font-weight:500"></span></div>
+
+  </div>
+
+
+
+  <!-- Extra uitgaven -->
+
+  <div class="card">
+
+    <h3>Extra uitgaven</h3>
+
+    <div class="fr"><label>Uitgaan</label><div class="iw"><span>€</span><input type="number" id="f-uit" value="200" min="0" step="1" oninput="go()"></div></div>
+
+    <div class="fr"><label>Sparen voor Daniël</label><div class="iw"><span>€</span><input type="number" id="f-dan" value="100" min="0" step="1" oninput="go()"></div></div>
+
+    <div class="fr"><label>Bankkosten Rabobank</label><div class="iw"><span>€</span><input type="number" id="f-bkk" value="14.13" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="fr"><label>Parkeerapp</label><div class="iw"><span>€</span><input type="number" id="f-park" value="0" min="0" step="1" oninput="go()"></div></div>
+
+    <div class="fr"><label>Achterstand</label><div class="iw"><span>€</span><input type="number" id="f-acht" value="0" min="0" step="1" oninput="go()"></div></div>
+
+    <div class="fr"><label>Online bestellingen</label><div class="iw"><span>€</span><input type="number" id="f-onl" value="0" min="0" step="1" oninput="go()"></div></div>
+
+    <div style="border-top:1px solid #eee;margin-top:6px;padding-top:6px">
+
+      <button class="abo-btn" id="abo-btn" onclick="toggleAbo()">
+
+        <span id="abo-arrow">&#9654;</span>
+
+        <span>Abonnementen</span>
+
+        <span id="abo-badge" style="margin-left:auto;font-size:12px;font-weight:500;color:#111">€ 61,58</span>
+
+      </button>
+
+      <div id="abo-sec" style="display:none">
+
+        <div class="fr"><label class="dim">Staatsloterij</label><div class="iw"><span>€</span><input type="number" id="f-sta" value="4.00" min="0" step="0.01" oninput="go()"></div></div>
+
+        <div class="fr"><label class="dim">NL Ziet</label><div class="iw"><span>€</span><input type="number" id="f-nlz" value="9.95" min="0" step="0.01" oninput="go()"></div></div>
+
+        <div class="fr"><label class="dim">PC Loterij</label><div class="iw"><span>€</span><input type="number" id="f-pcl" value="15.50" min="0" step="0.01" oninput="go()"></div></div>
+
+        <div class="fr"><label class="dim">Spotify</label><div class="iw"><span>€</span><input type="number" id="f-spo" value="10.99" min="0" step="0.01" oninput="go()"></div></div>
+
+        <div class="fr"><label class="dim">Storytel</label><div class="iw"><span>€</span><input type="number" id="f-sto" value="12.95" min="0" step="0.01" oninput="go()"></div></div>
+
+        <div class="fr"><label class="dim">NS abonnement</label><div class="iw"><span>€</span><input type="number" id="f-ns" value="5.20" min="0" step="0.01" oninput="go()"></div></div>
+
+        <div class="fr"><label class="dim">Videoland</label><div class="iw"><span>€</span><input type="number" id="f-vid" value="2.99" min="0" step="0.01" oninput="go()"></div></div>
+
+      </div>
+
+    </div>
+
+    <div class="ctot"><span class="cl">Totaal extra uitgaven</span><span class="cv" id="t-ext">€ 0</span></div>
+
+  </div>
+
+
+
+  <!-- Over -->
+
+  <div id="over-box" class="over-box pos-bg">
+
+    <div>
+
+      <div style="font-size:12px;color:#666">Onder de streep</div>
+
+      <div style="font-size:14px;font-weight:500;margin:3px 0" id="over-lbl">Over mei 2026</div>
+
+      <div style="font-size:11px;color:#888">Volgende maand automatisch meegenomen</div>
+
+    </div>
+
+    <div class="ov pos" id="over-val">€ 0</div>
+
+  </div>
+
+
+
+  <!-- Vrij besteedbaar -->
+
+  <div class="card">
+
+    <h3>Vrij besteedbaar</h3>
+
+    <div class="bdr"><span style="color:#666">Totaal over</span><span id="bd-over" style="font-weight:500">€ 0</span></div>
+
+    <div class="bdr"><span style="color:#666">Geblokkeerd in sparpotjes</span><span id="bd-blok" style="color:#a32d2d">- € 0</span></div>
+
+    <div class="bdr" style="border-top:1px solid #ddd;padding-top:8px;margin-top:2px"><span style="font-weight:500;font-size:14px">Vrij besteedbaar</span><span id="bd-vrij" style="font-size:16px;font-weight:500">€ 0</span></div>
+
+  </div>
+
+
+
+  <!-- Spaarsaldo -->
+
+  <div class="card">
+
+    <h3>Spaarsaldo cumulatief</h3>
+
+    <p style="font-size:11px;color:#888;margin-bottom:10px">Saldo wordt automatisch opgebouwd per maand op basis van je inleg</p>
+
+    <div class="sgrid">
+
+      <div class="si"><p class="sil">Algemeen sparen</p><p class="siv" id="s-alg">€ 0</p><p class="sii">Inleg: <span id="si-alg">€ 0</span></p></div>
+
+      <div class="si"><p class="sil">Vakantie sparen</p><p class="siv" id="s-vak">€ 0</p><p class="sii">Inleg: <span id="si-vak">€ 0</span></p></div>
+
+      <div class="si"><p class="sil">Sparen voor Daniël</p><p class="siv" id="s-dan">€ 0</p><p class="sii">Inleg: <span id="si-dan">€ 0</span></p></div>
+
+      <div class="si"><p class="sil">Schuld verbouwing</p><p class="siv neg" id="s-schuld">€ 0</p><p class="sii">Afgelost: <span id="si-schuld">€ 0</span></p></div>
+
+    </div>
+
+    <div style="margin-top:12px;border-top:1px solid #eee;padding-top:10px">
+
+      <div style="font-size:11px;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Startbedragen (eenmalig instellen)</div>
+
+      <div class="starts-grid">
+
+        <div class="fr"><label class="dim">Alg. sparen start</label><div class="iw"><span>€</span><input type="number" id="st-alg" value="350" min="0" step="1" oninput="calcSaldo()"></div></div>
+
+        <div class="fr"><label class="dim">Vakantie start</label><div class="iw"><span>€</span><input type="number" id="st-vak" value="350" min="0" step="1" oninput="calcSaldo()"></div></div>
+
+        <div class="fr"><label class="dim">Daniël start</label><div class="iw"><span>€</span><input type="number" id="st-dan" value="100" min="0" step="1" oninput="calcSaldo()"></div></div>
+
+        <div class="fr"><label class="dim">Schuld start</label><div class="iw"><span>€</span><input type="number" id="st-schuld" value="44554" min="0" step="1" oninput="calcSaldo()"></div></div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- Jaaroverzicht -->
+
+  <div class="card">
+
+    <h3 id="chart-title">Jaaroverzicht</h3>
+
+    <div class="chart-wrap"><canvas id="jaarchart"></canvas></div>
+
+  </div>
+
+
+
+  <p class="footer">Automatisch opgeslagen &bull; <span id="saved-t"></span></p>
+
+</div>
+
+
+
+<script>
+
+const MN=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+
+const _now=new Date();let cy=_now.getFullYear(),cm=_now.getMonth(),aboOpen=false,jChart=null;
+
+
+
+const FLD=['sal','lan','vor','syn','vve','gem','nbd','dif','cb','vbo','fbt','av','mon','bue','odi','ben','abl','afs','pl','vs','as','bw1','bw2','bw3','bw4','bw5','tank','kap','mmo','mas','ibz','zov','uit','dan','bkk','park','acht','onl','sta','nlz','pcl','spo','sto','ns','vid'];
+
+const DEF={sal:'3150',lan:'1000',vor:'0',syn:'568.30',vve:'300.43',gem:'86.25',nbd:'28.82',dif:'15.00',cb:'31.27',vbo:'62.00',fbt:'131.95',av:'43.82',mon:'17.29',bue:'47.00',odi:'48.94',ben:'16.72',abl:'77.00',afs:'500.00',pl:'600.00',vs:'100.00',as:'100.00',bw1:'150',bw2:'150',bw3:'150',bw4:'150',bw5:'50',tank:'300',kap:'50',mmo:'100',mas:'100',ibz:'600',zov:'0',uit:'200',dan:'100',bkk:'14.13',park:'0',acht:'0',onl:'0',sta:'4.00',nlz:'9.95',pcl:'15.50',spo:'10.99',sto:'12.95',ns:'5.20',vid:'2.99'};
+
+
+
+function mk(y,m){return 'fin5_'+y+'_'+m;}
+
+function pmk(){let m=cm-1,y=cy;if(m<0){m=11;y--;}return mk(y,m);}
+
+function g(id){return parseFloat(document.getElementById('f-'+id)?.value||0)||0;}
+
+function fv(n){return '€ '+Math.abs(n).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+function dv(d,k){return parseFloat(d[k]||0)||0;}
+
+
+
+function calc(d){
+
+  const ink=dv(d,'sal')+dv(d,'lan')+dv(d,'vor');
+
+  const vf=dv(d,'syn')+dv(d,'vve')+dv(d,'gem')+dv(d,'nbd')+dv(d,'dif')+dv(d,'cb')+dv(d,'vbo')+dv(d,'fbt')+dv(d,'av')+dv(d,'mon')+dv(d,'bue')+dv(d,'odi')+dv(d,'ben')+dv(d,'abl')+dv(d,'afs')+dv(d,'pl')+dv(d,'vs')+dv(d,'as');
+
+  const bood=dv(d,'bw1')+dv(d,'bw2')+dv(d,'bw3')+dv(d,'bw4')+dv(d,'bw5');
+
+  const tank=dv(d,'tank');
+
+  const vast=vf+bood+tank;
+
+  const zak=dv(d,'kap')+dv(d,'mmo')+dv(d,'mas')+dv(d,'ibz')+dv(d,'zov');
+
+  const abo=dv(d,'sta')+dv(d,'nlz')+dv(d,'pcl')+dv(d,'spo')+dv(d,'sto')+dv(d,'ns')+dv(d,'vid');
+
+  const ext=zak+dv(d,'uit')+dv(d,'dan')+dv(d,'bkk')+dv(d,'park')+dv(d,'acht')+dv(d,'onl')+abo;
+
+  return{ink,vf,bood,tank,vast,zak,abo,ext,over:ink-vast-ext};
+
+}
+
+
+
+function setDev(id,actual,budget){
+
+  const d=budget-actual;
+
+  const el=document.getElementById(id);
+
+  el.textContent=(d>=0?'+ ':'− ')+fv(d);
+
+  el.style.color=d>=0?'#0f6e56':'#a32d2d';
+
+}
+
+
+
+function toggleAbo(){
+
+  aboOpen=!aboOpen;
+
+  document.getElementById('abo-sec').style.display=aboOpen?'block':'none';
+
+  document.getElementById('abo-arrow').textContent=aboOpen?'▼':'▶';
+
+}
+
+
+
+function calcSaldo(){
+
+  const sa=parseFloat(document.getElementById('st-alg').value)||0;
+
+  const sv=parseFloat(document.getElementById('st-vak').value)||0;
+
+  const sd=parseFloat(document.getElementById('st-dan').value)||0;
+
+  const ss=parseFloat(document.getElementById('st-schuld').value)||0;
+
+  localStorage.setItem('fin5_starts',JSON.stringify({alg:sa,vak:sv,dan:sd,schuld:ss}));
+
+  let alg=sa,vak=sv,dan=sd,schuld=ss,ca=0,cv=0,cd=0,cs=0;
+
+  for(let y=2025;y<=cy;y++){
+
+    const em=(y===cy)?cm:11;
+
+    for(let m=0;m<=em;m++){
+
+      const raw=localStorage.getItem(mk(y,m));
+
+      if(raw){
+
+        const r=JSON.parse(raw);
+
+        alg+=dv(r,'as');vak+=dv(r,'vs');dan+=dv(r,'dan');schuld-=dv(r,'afs');
+
+        if(y===cy&&m===cm){ca=dv(r,'as');cv=dv(r,'vs');cd=dv(r,'dan');cs=dv(r,'afs');}
+
+      }
+
+    }
+
+  }
+
+  document.getElementById('s-alg').textContent=fv(alg);
+
+  document.getElementById('s-vak').textContent=fv(vak);
+
+  document.getElementById('s-dan').textContent=fv(dan);
+
+  document.getElementById('s-schuld').textContent=fv(schuld);
+
+  document.getElementById('si-alg').textContent=fv(ca);
+
+  document.getElementById('si-vak').textContent=fv(cv);
+
+  document.getElementById('si-dan').textContent=fv(cd);
+
+  document.getElementById('si-schuld').textContent=fv(cs);
+
+}
+
+
+
+function buildChart(){
+
+  const lbArr=[],inkArr=[],uitArr=[],ovArr=[];
+
+  for(let m=0;m<12;m++){
+
+    lbArr.push(MN[m].slice(0,3));
+
+    const raw=localStorage.getItem(mk(cy,m));
+
+    if(raw){const r=calc(JSON.parse(raw));inkArr.push(r.ink);uitArr.push(r.vast+r.ext);ovArr.push(r.over);}
+
+    else{inkArr.push(m<=cm?0:null);uitArr.push(m<=cm?0:null);ovArr.push(m<=cm?0:null);}
+
+  }
+
+  const ctx=document.getElementById('jaarchart').getContext('2d');
+
+  if(jChart)jChart.destroy();
+
+  jChart=new Chart(ctx,{data:{labels:lbArr,datasets:[
+
+    {type:'bar',label:'Inkomsten',data:inkArr,backgroundColor:'rgba(29,158,117,.22)',borderColor:'rgba(29,158,117,.7)',borderWidth:1,borderRadius:3},
+
+    {type:'bar',label:'Uitgaven',data:uitArr,backgroundColor:'rgba(226,75,74,.18)',borderColor:'rgba(226,75,74,.55)',borderWidth:1,borderRadius:3},
+
+    {type:'line',label:'Over',data:ovArr,borderColor:'#378ADD',backgroundColor:'transparent',borderWidth:2,pointRadius:3,pointBackgroundColor:'#378ADD',tension:.3}
+
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{font:{size:11},boxWidth:12,padding:10}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fv(c.raw||0)}}},scales:{x:{grid:{color:'rgba(0,0,0,.06)'},ticks:{font:{size:11}}},y:{grid:{color:'rgba(0,0,0,.06)'},ticks:{font:{size:11},callback:v=>'€'+Math.round(v/1000)+'k'}}}}});
+
+}
+
+
+
+function save(){
+
+  const d={};FLD.forEach(id=>{const el=document.getElementById('f-'+id);if(el)d[id]=el.value;});
+
+  localStorage.setItem(mk(cy,cm),JSON.stringify(d));
+
+}
+
+
+
+function load(){
+
+  const raw=localStorage.getItem(mk(cy,cm));
+
+  const vn=document.getElementById('vnote');
+
+  if(raw){
+
+    const d=JSON.parse(raw);
+
+    FLD.forEach(id=>{const el=document.getElementById('f-'+id);if(el&&d[id]!==undefined)el.value=d[id];});
+
+    if(vn)vn.textContent='';
+
+  } else {
+
+    FLD.forEach(id=>{const el=document.getElementById('f-'+id);if(el)el.value=DEF[id]||'0';});
+
+    const prev=localStorage.getItem(pmk());
+
+    if(prev){
+
+      const po=calc(JSON.parse(prev)).over;
+
+      if(po>0){
+
+        const el=document.getElementById('f-vor');
+
+        if(el)el.value=po.toFixed(2);
+
+        if(vn)vn.textContent='Overgenomen van '+(cm>0?MN[cm-1]:MN[11]);
+
+      }
+
+    }
+
+  }
+
+  const starts=JSON.parse(localStorage.getItem('fin5_starts')||'{}');
+
+  if(starts.alg!==undefined)document.getElementById('st-alg').value=starts.alg;
+
+  if(starts.vak!==undefined)document.getElementById('st-vak').value=starts.vak;
+
+  if(starts.dan!==undefined)document.getElementById('st-dan').value=starts.dan;
+
+  if(starts.schuld!==undefined)document.getElementById('st-schuld').value=starts.schuld;
+
+}
+
+
+
+function go(){
+
+  save();
+
+  const cur={};FLD.forEach(id=>{const el=document.getElementById('f-'+id);if(el)cur[id]=el.value;});
+
+  const r=calc(cur);
+
+  const gespaard=g('vs')+g('as')+g('dan');
+
+  const vrij=r.over-gespaard;
+
+
+
+  document.getElementById('s-in').textContent=fv(r.ink);
+
+  document.getElementById('s-uit').textContent=fv(r.vast+r.ext);
+
+  const so=document.getElementById('s-over');
+
+  so.textContent=(r.over<0?'− ':'')+fv(r.over);
+
+  so.className='sv '+(r.over>=0?'pos':'neg');
+
+
+
+  document.getElementById('t-in').textContent=fv(r.ink);
+
+  document.getElementById('t-vast-fixed').textContent=fv(r.vf);
+
+  document.getElementById('t-ext').textContent=fv(r.ext);
+
+
+
+  document.getElementById('bood-spent').textContent=fv(r.bood);
+
+  const bp=Math.min(100,Math.round((r.bood/650)*100));
+
+  document.getElementById('bood-bar').style.width=bp+'%';
+
+  document.getElementById('bood-bar').style.background=r.bood<=650?'#1D9E75':'#E24B4A';
+
+  setDev('bood-dev',r.bood,650);
+
+
+
+  document.getElementById('zak-spent').textContent=fv(r.zak);
+
+  const zp=Math.min(100,Math.round((r.zak/850)*100));
+
+  document.getElementById('zak-bar').style.width=zp+'%';
+
+  document.getElementById('zak-bar').style.background=r.zak<=850?'#1D9E75':'#E24B4A';
+
+  setDev('zak-dev',r.zak,850);
+
+  setDev('tank-dev',r.tank,300);
+
+
+
+  document.getElementById('abo-badge').textContent=fv(r.abo);
+
+
+
+  const ob=document.getElementById('over-box');
+
+  ob.className='over-box '+(r.over>=0?'pos-bg':'neg-bg');
+
+  const ov=document.getElementById('over-val');
+
+  ov.textContent=(r.over<0?'− ':'')+fv(r.over);
+
+  ov.className='ov '+(r.over>=0?'pos':'neg');
+
+  document.getElementById('over-lbl').textContent='Over '+MN[cm]+' '+cy;
+
+
+
+  document.getElementById('bd-over').textContent=(r.over<0?'− ':'')+fv(r.over);
+
+  document.getElementById('bd-blok').textContent='− '+fv(gespaard);
+
+  const vj=document.getElementById('bd-vrij');
+
+  vj.textContent=(vrij<0?'− ':'')+fv(vrij);
+
+  vj.style.color=vrij>=0?'#0f6e56':'#a32d2d';
+
+
+
+  calcSaldo();
+
+  document.getElementById('chart-title').textContent='Jaaroverzicht '+cy;
+
+  buildChart();
+
+  document.getElementById('saved-t').textContent=new Date().toLocaleString('nl-NL',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+
+}
+
+
+
+function shiftM(dir){
+
+  cm+=dir;if(cm>11){cm=0;cy++;}if(cm<0){cm=11;cy--;}
+
+  document.getElementById('mlbl').textContent=MN[cm]+' '+cy;
+
+  load();go();
+
+}
+
+
+
+document.getElementById('mlbl').textContent=MN[cm]+' '+cy;
+
+load();
+
+go();
+
+</script>
+
+</body>
+
+</html>

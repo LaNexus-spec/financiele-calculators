@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Financiën Armand">
+<title>Financiële Calculator – Armand</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4ff; color: #1a1a1a; padding: 24px 16px; padding-bottom: 40px; }
+  .wrap { max-width: 680px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 1.25rem; color: #111; }
+
+  /* Month nav */
+  .mbar { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .mbar h2 { flex: 1; font-size: 17px; font-weight: 500; text-transform: capitalize; }
+  .mbar button { background: none; border: 1px solid #ccc; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 14px; }
+  .mbar button:hover { background: #eee; }
+
+  /* Summary */
+  .sum3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+  .sc { background: #dde8ff; border-radius: 8px; padding: 10px 12px; }
+  .sc .sl { font-size: 11px; color: #555; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .05em; }
+  .sc .sv { font-size: 16px; font-weight: 500; }
+  .pos { color: #0f6e56; }
+  .neg { color: #a32d2d; }
+
+  /* Cards */
+  .card { background: #fff; border: 1px solid #d0d8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; }
+  .card h3 { font-size: 12px; font-weight: 700; color: #111; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .07em; }
+
+  /* Field rows */
+  .fr { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px solid #f0f0ee; }
+  .fr:last-of-type { border-bottom: none; }
+  .fr label { flex: 1; font-size: 13px; }
+  .fr label.dim { color: #888; font-size: 12px; }
+
+  /* Editable label */
+  .fr label.editable { color: #888; font-size: 12px; }
+  .fr label.editable input[type=text] { border: none; background: transparent; font-size: 12px; color: #666; width: 100%; outline: none; padding: 0; font-family: inherit; cursor: text; }
+  .fr label.editable input[type=text]:focus { color: #111; border-bottom: 1px dashed #6a8fd8; }
+
+  /* Input wrap */
+  .iw { position: relative; width: 110px; flex-shrink: 0; }
+  .iw span { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #888; pointer-events: none; }
+  .iw input[type=number] { padding: 4px 6px 4px 20px; width: 100%; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; text-align: right; background: #fafafa; }
+  .iw input[type=number]:focus { outline: none; border-color: #6a8fd8; background: #fff; }
+
+  /* Section headers */
+  .shd { font-size: 11px; font-weight: 700; color: #3355a0; text-transform: uppercase; letter-spacing: .05em; padding: 8px 0 3px; margin-top: 4px; border-bottom: 1px solid #eee; }
+
+  /* Card totals */
+  .ctot { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; margin-top: 6px; border-top: 1px solid #ddd; }
+  .ctot .cl { font-size: 12px; font-weight: 700; color: #333; }
+  .ctot .cv { font-size: 14px; font-weight: 700; }
+
+  /* Tracker */
+  .tcard { background: #fff; border: 1px solid #d0d8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; }
+  .tcard h3 { font-size: 12px; font-weight: 700; color: #111; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .07em; }
+  .prog-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .prog-track { height: 5px; background: #ddd; border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+  .prog-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+  .dev-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0 0; }
+
+  /* Over box */
+  .over-box { border-radius: 12px; padding: 20px 24px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .over-box.pos-bg { background: #e1f5ee; border: 1px solid #9fe1cb; }
+  .over-box.neg-bg { background: #fcebeb; border: 1px solid #f7c1c1; }
+  .over-box .ov { font-size: 30px; font-weight: 500; }
+
+  /* Breakdown rows */
+  .bdr { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #f0f0ee; font-size: 13px; }
+  .bdr:last-of-type { border-bottom: none; }
+
+  /* Vorige maand highlight */
+  .vorige-hl { background: #e1f5ee; border-radius: 6px; padding: 5px 8px; margin-top: 4px; border-bottom: none !important; }
+
+  /* Schulden saldo */
+  .sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .si { padding: 10px; background: #f0f4ff; border-radius: 8px; }
+  .si .sil { font-size: 12px; color: #555; margin-bottom: 3px; }
+  .si .siv { font-size: 15px; font-weight: 500; }
+  .si .sii { font-size: 11px; color: #888; margin-top: 2px; }
+
+  /* Chart */
+  .chart-wrap { position: relative; height: 200px; margin-top: 8px; }
+
+  /* Footer */
+  .footer { font-size: 11px; color: #aaa; text-align: right; margin-top: 4px; }
+
+  /* Starts grid */
+  .starts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+  /* iPhone banner */
+  .iphone-banner { background: #e8f0fe; border: 1px solid #aac4f7; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer; }
+  .iphone-banner .icon { font-size: 20px; flex-shrink: 0; }
+  .iphone-banner .txt { flex: 1; color: #1a56a4; font-weight: 500; }
+  .iphone-card { background: #fff; border: 1px solid #aac4f7; border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; display: none; }
+  .iphone-card h3 { font-size: 13px; font-weight: 700; color: #1a56a4; margin-bottom: 10px; }
+  .iphone-step { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid #f0f0ee; font-size: 13px; align-items: flex-start; }
+  .iphone-step:last-child { border-bottom: none; }
+  .iphone-step .num { background: #1a56a4; color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .iphone-step .stxt { line-height: 1.5; color: #333; }
+  .iphone-note { font-size: 11px; color: #888; margin-top: 10px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Financiële calculator Armand</h1>
+
+  <!-- iPhone banner -->
+  <div class="iphone-banner" onclick="toggleIphone()">
+    <span class="icon">📱</span>
+    <span class="txt">Op je iPhone gebruiken? Voeg toe aan beginscherm →</span>
+    <span id="iph-arr">▶</span>
+  </div>
+  <div class="iphone-card" id="iph-card">
+    <h3>📱 Hoe zet je deze calculator op je iPhone-beginscherm?</h3>
+    <div class="iphone-step"><div class="num">1</div><div class="stxt">Stuur het bestand <strong>financiele-calculator-armand.html</strong> naar jezelf via WhatsApp, e-mail of AirDrop en open het op je iPhone.</div></div>
+    <div class="iphone-step"><div class="num">2</div><div class="stxt">Open het bestand in <strong>Safari</strong> (niet Chrome). Tik op het deelknopje onderaan, het vierkantje met een pijltje omhoog <strong>⬆︎</strong>.</div></div>
+    <div class="iphone-step"><div class="num">3</div><div class="stxt">Scroll naar beneden en tik op <strong>"Zet op beginscherm"</strong>.</div></div>
+    <div class="iphone-step"><div class="num">4</div><div class="stxt">Geef het een naam en tik op <strong>"Voeg toe"</strong>. De calculator staat nu als app op je beginscherm.</div></div>
+    <div class="iphone-note">⚠️ Gegevens worden lokaal opgeslagen op dit apparaat. Gebruik altijd hetzelfde apparaat en dezelfde browser om je cijfers te bewaren.</div>
+  </div>
+
+  <!-- Month nav -->
+  <div class="mbar">
+    <button onclick="shiftM(-1)">&#8249;</button>
+    <h2 id="mlbl"></h2>
+    <button onclick="shiftM(1)">&#8250;</button>
+  </div>
+
+  <!-- Summary -->
+  <div class="sum3">
+    <div class="sc"><p class="sl">Inkomsten</p><p class="sv" id="s-in">€ 0</p></div>
+    <div class="sc"><p class="sl">Uitgaven</p><p class="sv" id="s-uit">€ 0</p></div>
+    <div class="sc"><p class="sl">Over</p><p class="sv" id="s-over">€ 0</p></div>
+  </div>
+
+  <!-- Inkomsten -->
+  <div class="card">
+    <h3>Inkomsten</h3>
+    <div class="fr"><label>Startpeople</label><div class="iw"><span>€</span><input type="number" id="f-stp" value="0" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr vorige-hl"><label>Over vorige maand<br><span id="vnote" style="font-size:11px;color:#0f6e56"></span></label><div class="iw"><span>€</span><input type="number" id="f-vor" value="0" min="0" step="1" oninput="go()"></div></div>
+    <div class="ctot"><span class="cl">Totaal inkomsten</span><span class="cv" id="t-in">€ 0</span></div>
+  </div>
+
+  <!-- Vaste lasten -->
+  <div class="card">
+    <h3>Vaste lasten</h3>
+
+    <div class="shd">Wonen</div>
+    <div class="fr"><label>Rochdale huur</label><div class="iw"><span>€</span><input type="number" id="f-roc" value="0" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Belastingen</div>
+    <div class="fr"><label>Gemeente belastingen Amsterdam</label><div class="iw"><span>€</span><input type="number" id="f-gba" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Waternet belastingen</label><div class="iw"><span>€</span><input type="number" id="f-wnb" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Belastingdienst inkomstenbelasting</label><div class="iw"><span>€</span><input type="number" id="f-ikb" value="0" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Energie &amp; Water</div>
+    <div class="fr"><label>Waternet</label><div class="iw"><span>€</span><input type="number" id="f-wnt" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Vattenfall</label><div class="iw"><span>€</span><input type="number" id="f-vat" value="0" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Abonnementen &amp; Bankzaken</div>
+    <div class="fr"><label>Odido</label><div class="iw"><span>€</span><input type="number" id="f-odi" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Youfone</label><div class="iw"><span>€</span><input type="number" id="f-yof" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Rabobank</label><div class="iw"><span>€</span><input type="number" id="f-rab" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Bunq</label><div class="iw"><span>€</span><input type="number" id="f-bunq" value="0" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Verzekeringen</div>
+    <div class="fr"><label>Centraal Beheer rechtsbijstand</label><div class="iw"><span>€</span><input type="number" id="f-cbr" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Centraal Beheer aansprakelijkheid</label><div class="iw"><span>€</span><input type="number" id="f-cba" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>FBTO zorgverzekering</label><div class="iw"><span>€</span><input type="number" id="f-fbt" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>FBTO eigen bijdrage</label><div class="iw"><span>€</span><input type="number" id="f-fbe" value="0" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Abonnementen media</div>
+    <div class="fr"><label>Apple extra opslag</label><div class="iw"><span>€</span><input type="number" id="f-apl" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>NPO</label><div class="iw"><span>€</span><input type="number" id="f-npo" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Prime original</label><div class="iw"><span>€</span><input type="number" id="f-prmo" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Prime film</label><div class="iw"><span>€</span><input type="number" id="f-prfi" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label class="editable"><input type="text" id="lbl-med1" value="Abonnement 5" oninput="saveLbls()"></label><div class="iw"><span>€</span><input type="number" id="f-med1" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label class="editable"><input type="text" id="lbl-med2" value="Abonnement 6" oninput="saveLbls()"></label><div class="iw"><span>€</span><input type="number" id="f-med2" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label class="editable"><input type="text" id="lbl-med3" value="Abonnement 7" oninput="saveLbls()"></label><div class="iw"><span>€</span><input type="number" id="f-med3" value="0" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Bijdragen</div>
+    <div class="fr"><label>Natasha bijdrage maand</label><div class="iw"><span>€</span><input type="number" id="f-natm" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Natasha bijdrage extra</label><div class="iw"><span>€</span><input type="number" id="f-natx" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Amelie cadeautjes</label><div class="iw"><span>€</span><input type="number" id="f-amel" value="0" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Schulden afbetaling</div>
+    <div class="fr"><label>DUO</label><div class="iw"><span>€</span><input type="number" id="f-duo" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label class="editable"><input type="text" id="lbl-sch1" value="Schuld 1" oninput="saveLbls()"></label><div class="iw"><span>€</span><input type="number" id="f-sch1" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label class="editable"><input type="text" id="lbl-sch2" value="Schuld 2" oninput="saveLbls()"></label><div class="iw"><span>€</span><input type="number" id="f-sch2" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label class="editable"><input type="text" id="lbl-sch3" value="Schuld 3" oninput="saveLbls()"></label><div class="iw"><span>€</span><input type="number" id="f-sch3" value="0" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label class="editable"><input type="text" id="lbl-sch4" value="Schuld 4" oninput="saveLbls()"></label><div class="iw"><span>€</span><input type="number" id="f-sch4" value="0" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="ctot"><span class="cl">Subtotaal vaste lasten</span><span class="cv" id="t-vast">€ 0</span></div>
+  </div>
+
+  <!-- Boodschappen -->
+  <div class="tcard">
+    <h3>Boodschappen</h3>
+    <div class="prog-label"><span id="bood-spent" style="font-weight:500">€ 0</span><span style="color:#888">budget € 650</span></div>
+    <div class="prog-track"><div class="prog-fill" id="bood-bar" style="width:0%;background:#1D9E75"></div></div>
+    <div class="fr"><label class="dim">Week 1</label><div class="iw"><span>€</span><input type="number" id="f-bw1" value="150" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label class="dim">Week 2</label><div class="iw"><span>€</span><input type="number" id="f-bw2" value="150" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label class="dim">Week 3</label><div class="iw"><span>€</span><input type="number" id="f-bw3" value="150" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label class="dim">Week 4</label><div class="iw"><span>€</span><input type="number" id="f-bw4" value="150" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label class="dim">Week 5</label><div class="iw"><span>€</span><input type="number" id="f-bw5" value="50" min="0" step="1" oninput="go()"></div></div>
+    <div class="dev-row"><span style="color:#888">Afwijking</span><span id="bood-dev" style="font-weight:500"></span></div>
+  </div>
+
+  <!-- Extra uitgaven -->
+  <div class="card">
+    <h3>Extra uitgaven</h3>
+    <div class="fr"><label>Tanken</label><div class="iw"><span>€</span><input type="number" id="f-tank" value="0" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label>Uitgaan</label><div class="iw"><span>€</span><input type="number" id="f-uit" value="0" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label>Kleding</label><div class="iw"><span>€</span><input type="number" id="f-kled" value="0" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label>Overig</label><div class="iw"><span>€</span><input type="number" id="f-xov" value="0" min="0" step="1" oninput="go()"></div></div>
+    <div class="ctot"><span class="cl">Totaal extra uitgaven</span><span class="cv" id="t-ext">€ 0</span></div>
+  </div>
+
+  <!-- Over -->
+  <div id="over-box" class="over-box pos-bg">
+    <div>
+      <div style="font-size:12px;color:#666">Onder de streep</div>
+      <div style="font-size:14px;font-weight:500;margin:3px 0" id="over-lbl">Over mei 2026</div>
+      <div style="font-size:11px;color:#888">Volgende maand automatisch meegenomen</div>
+    </div>
+    <div class="ov pos" id="over-val">€ 0</div>
+  </div>
+
+  <!-- Vrij besteedbaar -->
+  <div class="card">
+    <h3>Vrij besteedbaar</h3>
+    <div class="bdr"><span style="color:#666">Totaal inkomsten</span><span id="bd-in" style="font-weight:500">€ 0</span></div>
+    <div class="bdr"><span style="color:#666">Totaal uitgaven</span><span id="bd-uit" style="color:#a32d2d">€ 0</span></div>
+    <div class="bdr" style="border-top:1px solid #ddd;padding-top:8px;margin-top:2px">
+      <span style="font-weight:500;font-size:14px">Vrij besteedbaar</span>
+      <span id="bd-vrij" style="font-size:16px;font-weight:500">€ 0</span>
+    </div>
+  </div>
+
+  <!-- Schulden saldo -->
+  <div class="card">
+    <h3>Schulden saldo cumulatief</h3>
+    <p style="font-size:11px;color:#888;margin-bottom:10px">Startbedragen invullen, afbetalingen worden automatisch afgetrokken per maand</p>
+    <div class="sgrid">
+      <div class="si">
+        <p class="sil">DUO</p>
+        <p class="siv neg" id="s-duo">€ 0</p>
+        <p class="sii">Aflossing: <span id="si-duo">€ 0</span>/mnd</p>
+      </div>
+      <div class="si">
+        <p class="sil" id="lbl-s-sch1">Schuld 1</p>
+        <p class="siv neg" id="s-sch1">€ 0</p>
+        <p class="sii">Aflossing: <span id="si-sch1">€ 0</span>/mnd</p>
+      </div>
+      <div class="si">
+        <p class="sil" id="lbl-s-sch2">Schuld 2</p>
+        <p class="siv neg" id="s-sch2">€ 0</p>
+        <p class="sii">Aflossing: <span id="si-sch2">€ 0</span>/mnd</p>
+      </div>
+      <div class="si">
+        <p class="sil" id="lbl-s-sch3">Schuld 3</p>
+        <p class="siv neg" id="s-sch3">€ 0</p>
+        <p class="sii">Aflossing: <span id="si-sch3">€ 0</span>/mnd</p>
+      </div>
+      <div class="si" style="grid-column:1/-1">
+        <p class="sil" id="lbl-s-sch4">Schuld 4</p>
+        <p class="siv neg" id="s-sch4">€ 0</p>
+        <p class="sii">Aflossing: <span id="si-sch4">€ 0</span>/mnd</p>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;border-top:1px solid #eee;padding-top:10px">
+      <div style="font-size:11px;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Openstaand bedrag (eenmalig instellen)</div>
+      <div class="starts-grid">
+        <div class="fr"><label class="dim">DUO start</label><div class="iw"><span>€</span><input type="number" id="st-duo" value="0" min="0" step="1" oninput="calcSaldo()"></div></div>
+        <div class="fr"><label class="dim" id="lbl-st-sch1">Schuld 1 start</label><div class="iw"><span>€</span><input type="number" id="st-sch1" value="0" min="0" step="1" oninput="calcSaldo()"></div></div>
+        <div class="fr"><label class="dim" id="lbl-st-sch2">Schuld 2 start</label><div class="iw"><span>€</span><input type="number" id="st-sch2" value="0" min="0" step="1" oninput="calcSaldo()"></div></div>
+        <div class="fr"><label class="dim" id="lbl-st-sch3">Schuld 3 start</label><div class="iw"><span>€</span><input type="number" id="st-sch3" value="0" min="0" step="1" oninput="calcSaldo()"></div></div>
+        <div class="fr" style="grid-column:1/-1"><label class="dim" id="lbl-st-sch4">Schuld 4 start</label><div class="iw"><span>€</span><input type="number" id="st-sch4" value="0" min="0" step="1" oninput="calcSaldo()"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Jaaroverzicht -->
+  <div class="card">
+    <h3 id="chart-title">Jaaroverzicht</h3>
+    <div class="chart-wrap"><canvas id="jaarchart"></canvas></div>
+  </div>
+
+  <p class="footer">Automatisch opgeslagen &bull; <span id="saved-t"></span></p>
+</div>
+
+<script>
+const MN=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const _now=new Date(); let cy=_now.getFullYear(), cm=_now.getMonth(), jChart=null, iphOpen=false;
+
+const FLD=['stp','vor','roc','gba','wnb','ikb','wnt','vat','odi','yof','rab','bunq','cbr','cba','fbt','fbe','apl','npo','prmo','prfi','med1','med2','med3','natm','natx','amel','duo','sch1','sch2','sch3','sch4','bw1','bw2','bw3','bw4','bw5','tank','uit','kled','xov'];
+const DEF={stp:'0',vor:'0',roc:'0',gba:'0',wnb:'0',ikb:'0',wnt:'0',vat:'0',odi:'0',yof:'0',rab:'0',bunq:'0',cbr:'0',cba:'0',fbt:'0',fbe:'0',apl:'0',npo:'0',prmo:'0',prfi:'0',med1:'0',med2:'0',med3:'0',natm:'0',natx:'0',amel:'0',duo:'0',sch1:'0',sch2:'0',sch3:'0',sch4:'0',bw1:'150',bw2:'150',bw3:'150',bw4:'150',bw5:'50',tank:'0',uit:'0',kled:'0',xov:'0'};
+const LBLS=['med1','med2','med3','sch1','sch2','sch3','sch4'];
+
+function mk(y,m){return 'arm5_'+y+'_'+m;}
+function pmk(){let m=cm-1,y=cy; if(m<0){m=11;y--;} return mk(y,m);}
+function g(id){return parseFloat(document.getElementById('f-'+id)?.value||0)||0;}
+function fv(n){return '€ '+Math.abs(n).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function dv(d,k){return parseFloat(d[k]||0)||0;}
+
+function calc(d){
+  const ink = dv(d,'stp')+dv(d,'vor');
+  const vf  = dv(d,'roc')+dv(d,'gba')+dv(d,'wnb')+dv(d,'ikb')
+             +dv(d,'wnt')+dv(d,'vat')
+             +dv(d,'odi')+dv(d,'yof')+dv(d,'rab')+dv(d,'bunq')
+             +dv(d,'cbr')+dv(d,'cba')+dv(d,'fbt')+dv(d,'fbe')
+             +dv(d,'apl')+dv(d,'npo')+dv(d,'prmo')+dv(d,'prfi')+dv(d,'med1')+dv(d,'med2')+dv(d,'med3')
+             +dv(d,'natm')+dv(d,'natx')+dv(d,'amel')
+             +dv(d,'duo')+dv(d,'sch1')+dv(d,'sch2')+dv(d,'sch3')+dv(d,'sch4');
+  const bood = dv(d,'bw1')+dv(d,'bw2')+dv(d,'bw3')+dv(d,'bw4')+dv(d,'bw5');
+  const ext  = dv(d,'tank')+dv(d,'uit')+dv(d,'kled')+dv(d,'xov');
+  const vast = vf+bood;
+  return {ink, vf, bood, ext, vast, over: ink - vast - ext};
+}
+
+function setDev(id,actual,budget){
+  const d=budget-actual;
+  const el=document.getElementById(id);
+  el.textContent=(d>=0?'+ ':'− ')+fv(d);
+  el.style.color=d>=0?'#0f6e56':'#a32d2d';
+}
+
+function toggleIphone(){
+  iphOpen=!iphOpen;
+  document.getElementById('iph-card').style.display=iphOpen?'block':'none';
+  document.getElementById('iph-arr').textContent=iphOpen?'▼':'▶';
+}
+
+function saveLbls(){
+  const obj={};
+  LBLS.forEach(k=>{const el=document.getElementById('lbl-'+k);if(el)obj[k]=el.value;});
+  localStorage.setItem('arm5_lbls',JSON.stringify(obj));
+  syncLbls();
+}
+
+function loadLbls(){
+  const raw=localStorage.getItem('arm5_lbls');
+  if(!raw)return;
+  const obj=JSON.parse(raw);
+  LBLS.forEach(k=>{const el=document.getElementById('lbl-'+k);if(el&&obj[k]!==undefined)el.value=obj[k];});
+  syncLbls();
+}
+
+function syncLbls(){
+  ['sch1','sch2','sch3','sch4'].forEach(k=>{
+    const lbl=document.getElementById('lbl-'+k)?.value||k;
+    const els=['lbl-s-'+k,'lbl-st-'+k];
+    els.forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=lbl+' start';});
+    const el2=document.getElementById('lbl-s-'+k);
+    if(el2)el2.textContent=lbl;
+  });
+}
+
+function calcSaldo(){
+  const st={duo:parseFloat(document.getElementById('st-duo').value)||0,sch1:parseFloat(document.getElementById('st-sch1').value)||0,sch2:parseFloat(document.getElementById('st-sch2').value)||0,sch3:parseFloat(document.getElementById('st-sch3').value)||0,sch4:parseFloat(document.getElementById('st-sch4').value)||0};
+  localStorage.setItem('arm5_starts',JSON.stringify(st));
+  let duo=st.duo,s1=st.sch1,s2=st.sch2,s3=st.sch3,s4=st.sch4;
+  let cduo=0,cs1=0,cs2=0,cs3=0,cs4=0;
+  for(let y=2025;y<=cy;y++){
+    const em=(y===cy)?cm:11;
+    for(let m=0;m<=em;m++){
+      const raw=localStorage.getItem(mk(y,m));
+      if(raw){
+        const r=JSON.parse(raw);
+        duo-=dv(r,'duo');s1-=dv(r,'sch1');s2-=dv(r,'sch2');s3-=dv(r,'sch3');s4-=dv(r,'sch4');
+        if(y===cy&&m===cm){cduo=dv(r,'duo');cs1=dv(r,'sch1');cs2=dv(r,'sch2');cs3=dv(r,'sch3');cs4=dv(r,'sch4');}
+      }
+    }
+  }
+  document.getElementById('s-duo').textContent=fv(duo);
+  document.getElementById('s-sch1').textContent=fv(s1);
+  document.getElementById('s-sch2').textContent=fv(s2);
+  document.getElementById('s-sch3').textContent=fv(s3);
+  document.getElementById('s-sch4').textContent=fv(s4);
+  document.getElementById('si-duo').textContent=fv(cduo);
+  document.getElementById('si-sch1').textContent=fv(cs1);
+  document.getElementById('si-sch2').textContent=fv(cs2);
+  document.getElementById('si-sch3').textContent=fv(cs3);
+  document.getElementById('si-sch4').textContent=fv(cs4);
+}
+
+function buildChart(){
+  const lbArr=[],inkArr=[],uitArr=[],ovArr=[];
+  for(let m=0;m<12;m++){
+    lbArr.push(MN[m].slice(0,3));
+    const raw=localStorage.getItem(mk(cy,m));
+    if(raw){const r=calc(JSON.parse(raw));inkArr.push(r.ink);uitArr.push(r.vast+r.ext);ovArr.push(r.over);}
+    else{inkArr.push(m<=cm?0:null);uitArr.push(m<=cm?0:null);ovArr.push(m<=cm?0:null);}
+  }
+  const ctx=document.getElementById('jaarchart').getContext('2d');
+  if(jChart)jChart.destroy();
+  jChart=new Chart(ctx,{data:{labels:lbArr,datasets:[
+    {type:'bar',label:'Inkomsten',data:inkArr,backgroundColor:'rgba(29,158,117,.22)',borderColor:'rgba(29,158,117,.7)',borderWidth:1,borderRadius:3},
+    {type:'bar',label:'Uitgaven',data:uitArr,backgroundColor:'rgba(226,75,74,.18)',borderColor:'rgba(226,75,74,.55)',borderWidth:1,borderRadius:3},
+    {type:'line',label:'Over',data:ovArr,borderColor:'#378ADD',backgroundColor:'transparent',borderWidth:2,pointRadius:3,pointBackgroundColor:'#378ADD',tension:.3}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{font:{size:11},boxWidth:12,padding:10}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fv(c.raw||0)}}},scales:{x:{grid:{color:'rgba(0,0,0,.06)'},ticks:{font:{size:11}}},y:{grid:{color:'rgba(0,0,0,.06)'},ticks:{font:{size:11},callback:v=>'€'+Math.round(v/1000)+'k'}}}}});
+}
+
+function save(){
+  const d={}; FLD.forEach(id=>{const el=document.getElementById('f-'+id);if(el)d[id]=el.value;});
+  localStorage.setItem(mk(cy,cm),JSON.stringify(d));
+}
+
+function load(){
+  const raw=localStorage.getItem(mk(cy,cm));
+  const vn=document.getElementById('vnote');
+  if(raw){
+    const d=JSON.parse(raw);
+    FLD.forEach(id=>{const el=document.getElementById('f-'+id);if(el&&d[id]!==undefined)el.value=d[id];});
+    if(vn)vn.textContent='';
+  } else {
+    FLD.forEach(id=>{const el=document.getElementById('f-'+id);if(el)el.value=DEF[id]||'0';});
+    const prev=localStorage.getItem(pmk());
+    if(prev){
+      const po=calc(JSON.parse(prev)).over;
+      if(po>0){
+        const el=document.getElementById('f-vor');
+        if(el)el.value=po.toFixed(2);
+        if(vn)vn.textContent='Overgenomen van '+(cm>0?MN[cm-1]:MN[11]);
+      }
+    }
+  }
+  const starts=JSON.parse(localStorage.getItem('arm5_starts')||'{}');
+  ['duo','sch1','sch2','sch3','sch4'].forEach(k=>{
+    if(starts[k]!==undefined)document.getElementById('st-'+k).value=starts[k];
+  });
+}
+
+function go(){
+  save();
+  const cur={}; FLD.forEach(id=>{const el=document.getElementById('f-'+id);if(el)cur[id]=el.value;});
+  const r=calc(cur);
+
+  document.getElementById('s-in').textContent=fv(r.ink);
+  document.getElementById('s-uit').textContent=fv(r.vast+r.ext);
+  const so=document.getElementById('s-over');
+  so.textContent=(r.over<0?'− ':'')+fv(r.over);
+  so.className='sv '+(r.over>=0?'pos':'neg');
+
+  document.getElementById('t-in').textContent=fv(r.ink);
+  document.getElementById('t-vast').textContent=fv(r.vf);
+  document.getElementById('t-ext').textContent=fv(r.ext);
+
+  document.getElementById('bood-spent').textContent=fv(r.bood);
+  const bp=Math.min(100,Math.round((r.bood/650)*100));
+  document.getElementById('bood-bar').style.width=bp+'%';
+  document.getElementById('bood-bar').style.background=r.bood<=650?'#1D9E75':'#E24B4A';
+  setDev('bood-dev',r.bood,650);
+
+  const ob=document.getElementById('over-box');
+  ob.className='over-box '+(r.over>=0?'pos-bg':'neg-bg');
+  const ov=document.getElementById('over-val');
+  ov.textContent=(r.over<0?'− ':'')+fv(r.over);
+  ov.className='ov '+(r.over>=0?'pos':'neg');
+  document.getElementById('over-lbl').textContent='Over '+MN[cm]+' '+cy;
+
+  document.getElementById('bd-in').textContent=fv(r.ink);
+  document.getElementById('bd-uit').textContent='− '+fv(r.vast+r.ext);
+  const vj=document.getElementById('bd-vrij');
+  vj.textContent=(r.over<0?'− ':'')+fv(r.over);
+  vj.style.color=r.over>=0?'#0f6e56':'#a32d2d';
+
+  calcSaldo();
+  document.getElementById('chart-title').textContent='Jaaroverzicht '+cy;
+  buildChart();
+  document.getElementById('saved-t').textContent=new Date().toLocaleString('nl-NL',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+}
+
+function shiftM(dir){
+  cm+=dir; if(cm>11){cm=0;cy++;} if(cm<0){cm=11;cy--;}
+  document.getElementById('mlbl').textContent=MN[cm]+' '+cy;
+  load(); go();
+}
+
+document.getElementById('mlbl').textContent=MN[cm]+' '+cy;
+loadLbls();
+load();
+go();
+</script>
+</body>
+</html>

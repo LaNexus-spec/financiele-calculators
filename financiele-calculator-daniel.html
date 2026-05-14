@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Financiën Daniël">
+<title>Financiële Calculator – Daniël</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4ff; color: #1a1a1a; padding: 24px 16px; padding-bottom: 40px; }
+  .wrap { max-width: 680px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 1.25rem; color: #111; }
+
+  /* iPhone banner */
+  .iphone-banner { background: #e8f0fe; border: 1px solid #aac4f7; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer; }
+  .iphone-banner .icon { font-size: 20px; flex-shrink: 0; }
+  .iphone-banner .txt { flex: 1; color: #1a56a4; font-weight: 500; }
+  .iphone-banner .arr { color: #aaa; font-size: 14px; }
+
+  /* iPhone instructions card */
+  .iphone-card { background: #fff; border: 1px solid #aac4f7; border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; display: none; }
+  .iphone-card h3 { font-size: 13px; font-weight: 700; color: #1a56a4; margin-bottom: 10px; }
+  .iphone-step { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid #f0f0ee; font-size: 13px; align-items: flex-start; }
+  .iphone-step:last-child { border-bottom: none; }
+  .iphone-step .num { background: #1a56a4; color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .iphone-step .stxt { line-height: 1.5; color: #333; }
+  .iphone-step .stxt strong { color: #111; }
+  .iphone-note { font-size: 11px; color: #888; margin-top: 10px; line-height: 1.5; }
+
+  /* Month nav */
+  .mbar { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .mbar h2 { flex: 1; font-size: 17px; font-weight: 500; text-transform: capitalize; }
+  .mbar button { background: none; border: 1px solid #ccc; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 14px; }
+  .mbar button:hover { background: #eee; }
+
+  /* Summary */
+  .sum3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+  .sc { background: #dde8ff; border-radius: 8px; padding: 10px 12px; }
+  .sc .sl { font-size: 11px; color: #555; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .05em; }
+  .sc .sv { font-size: 16px; font-weight: 500; }
+  .pos { color: #0f6e56; }
+  .neg { color: #a32d2d; }
+
+  /* Cards */
+  .card { background: #fff; border: 1px solid #d0d8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; }
+  .card h3 { font-size: 12px; font-weight: 700; color: #111; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .07em; }
+
+  /* Field rows */
+  .fr { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px solid #f0f0ee; }
+  .fr:last-of-type { border-bottom: none; }
+  .fr label { flex: 1; font-size: 13px; }
+  .fr label.dim { color: #888; font-size: 12px; }
+
+  /* Input wrap */
+  .iw { position: relative; width: 110px; flex-shrink: 0; }
+  .iw span { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #888; pointer-events: none; }
+  .iw input { padding: 4px 6px 4px 20px; width: 100%; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; text-align: right; background: #fafafa; }
+  .iw input:focus { outline: none; border-color: #6a8fd8; background: #fff; }
+
+  /* Section headers */
+  .shd { font-size: 11px; font-weight: 700; color: #3355a0; text-transform: uppercase; letter-spacing: .05em; padding: 8px 0 3px; margin-top: 4px; border-bottom: 1px solid #eee; }
+
+  /* Card totals */
+  .ctot { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; margin-top: 6px; border-top: 1px solid #ddd; }
+  .ctot .cl { font-size: 12px; font-weight: 700; color: #333; }
+  .ctot .cv { font-size: 14px; font-weight: 700; }
+
+  /* Boodschappen tracker */
+  .tcard { background: #fff; border: 1px solid #d0d8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; }
+  .tcard h3 { font-size: 12px; font-weight: 700; color: #111; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .07em; }
+  .prog-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .prog-track { height: 5px; background: #ddd; border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+  .prog-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+  .dev-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0 0; }
+
+  /* Over box */
+  .over-box { border-radius: 12px; padding: 20px 24px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .over-box.pos-bg { background: #e1f5ee; border: 1px solid #9fe1cb; }
+  .over-box.neg-bg { background: #fcebeb; border: 1px solid #f7c1c1; }
+  .over-box .ov { font-size: 30px; font-weight: 500; }
+
+  /* Breakdown rows */
+  .bdr { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #f0f0ee; font-size: 13px; }
+  .bdr:last-of-type { border-bottom: none; }
+
+  /* Saldo grid */
+  .sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .si { padding: 10px; background: #f0f4ff; border-radius: 8px; }
+  .si .sil { font-size: 12px; color: #555; margin-bottom: 3px; }
+  .si .siv { font-size: 15px; font-weight: 500; }
+  .si .sii { font-size: 11px; color: #888; margin-top: 2px; }
+
+  /* Vorige maand highlight */
+  .vorige-hl { background: #e1f5ee; border-radius: 6px; padding: 5px 8px; margin-top: 4px; border-bottom: none !important; }
+
+  /* Chart */
+  .chart-wrap { position: relative; height: 200px; margin-top: 8px; }
+
+  /* Footer */
+  .footer { font-size: 11px; color: #aaa; text-align: right; margin-top: 4px; }
+
+  /* Starts grid */
+  .starts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+  /* Belasting toggle */
+  .bel-note { font-size: 11px; color: #888; padding: 3px 0 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Financiële calculator Daniël</h1>
+
+  <!-- iPhone banner -->
+  <div class="iphone-banner" onclick="toggleIphone()">
+    <span class="icon">📱</span>
+    <span class="txt">Op je iPhone gebruiken? Voeg toe aan beginscherm →</span>
+    <span class="arr" id="iph-arr">▶</span>
+  </div>
+  <div class="iphone-card" id="iph-card">
+    <h3>📱 Hoe zet je deze calculator op je iPhone-beginscherm?</h3>
+    <div class="iphone-step">
+      <div class="num">1</div>
+      <div class="stxt">Stuur het bestand <strong>financiele-calculator-daniel.html</strong> naar jezelf via WhatsApp, e-mail of AirDrop en open het op je iPhone.</div>
+    </div>
+    <div class="iphone-step">
+      <div class="num">2</div>
+      <div class="stxt">Open het bestand in <strong>Safari</strong> (niet Chrome). Tik op de deelknop onderaan — het vierkantje met een pijltje omhoog <strong>⬆︎</strong>.</div>
+    </div>
+    <div class="iphone-step">
+      <div class="num">3</div>
+      <div class="stxt">Scroll in het menu naar beneden en tik op <strong>"Zet op beginscherm"</strong> (of "Add to Home Screen").</div>
+    </div>
+    <div class="iphone-step">
+      <div class="num">4</div>
+      <div class="stxt">Geef het een naam, bijv. <strong>"Mijn financiën"</strong>, en tik op <strong>"Voeg toe"</strong>.</div>
+    </div>
+    <div class="iphone-step">
+      <div class="num">5</div>
+      <div class="stxt">De calculator staat nu als <strong>app-icoontje</strong> op je beginscherm. Opent volledig scherm, zonder adresbalk!</div>
+    </div>
+    <div class="iphone-note">⚠️ Belangrijk: alle gegevens worden opgeslagen op het apparaat zelf (localStorage). Zorg dus dat je altijd hetzelfde apparaat + browser gebruikt, anders zijn je cijfers weg. Tip: maak elke maand even een screenshot als back-up.</div>
+  </div>
+
+  <!-- Month nav -->
+  <div class="mbar">
+    <button onclick="shiftM(-1)">&#8249;</button>
+    <h2 id="mlbl"></h2>
+    <button onclick="shiftM(1)">&#8250;</button>
+  </div>
+
+  <!-- Summary -->
+  <div class="sum3">
+    <div class="sc"><p class="sl">Inkomsten</p><p class="sv" id="s-in">€ 0</p></div>
+    <div class="sc"><p class="sl">Uitgaven</p><p class="sv" id="s-uit">€ 0</p></div>
+    <div class="sc"><p class="sl">Over</p><p class="sv" id="s-over">€ 0</p></div>
+  </div>
+
+  <!-- Inkomsten -->
+  <div class="card">
+    <h3>Inkomsten</h3>
+    <div class="fr"><label>Salaris GLS</label><div class="iw"><span>€</span><input type="number" id="f-sal" value="2830" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr">
+      <label>Belastingteruggave<br><span class="bel-note">Alleen invullen als je dit maand ontvangt</span></label>
+      <div class="iw"><span>€</span><input type="number" id="f-bel" value="0" min="0" step="1" oninput="go()"></div>
+    </div>
+    <div class="fr vorige-hl"><label>Over vorige maand<br><span id="vnote" style="font-size:11px;color:#0f6e56"></span></label><div class="iw"><span>€</span><input type="number" id="f-vor" value="0" min="0" step="1" oninput="go()"></div></div>
+    <div class="ctot"><span class="cl">Totaal inkomsten</span><span class="cv" id="t-in">€ 0</span></div>
+  </div>
+
+  <!-- Vaste lasten -->
+  <div class="card">
+    <h3>Vaste lasten</h3>
+
+    <div class="shd">Wonen</div>
+    <div class="fr"><label>Huur</label><div class="iw"><span>€</span><input type="number" id="f-hur" value="497.55" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Zorg &amp; Verzekering</div>
+    <div class="fr"><label>Verzekering</label><div class="iw"><span>€</span><input type="number" id="f-verz" value="8.00" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>VinkVink + tandarts</label><div class="iw"><span>€</span><input type="number" id="f-vink" value="155.85" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Eigen bijdrage zorg</label><div class="iw"><span>€</span><input type="number" id="f-eigb" value="38.50" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Internet &amp; Telefoon</div>
+    <div class="fr"><label>KPN internet</label><div class="iw"><span>€</span><input type="number" id="f-kpn" value="35.00" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Odido telefoons</label><div class="iw"><span>€</span><input type="number" id="f-odi" value="84.78" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Energie &amp; Water</div>
+    <div class="fr"><label>Vattenfall</label><div class="iw"><span>€</span><input type="number" id="f-vatt" value="131.00" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Vitens</label><div class="iw"><span>€</span><input type="number" id="f-vit" value="12.00" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Schulden</div>
+    <div class="fr"><label>Santander</label><div class="iw"><span>€</span><input type="number" id="f-sant" value="64.64" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>DUO</label><div class="iw"><span>€</span><input type="number" id="f-duo" value="25.00" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Belastingen</div>
+    <div class="fr"><label>Gemeentelijke belasting</label><div class="iw"><span>€</span><input type="number" id="f-gemb" value="150.00" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Noordelijk Belastingkantoor</label><div class="iw"><span>€</span><input type="number" id="f-nbd" value="17.93" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="shd">Abonnementen &amp; Bank</div>
+    <div class="fr"><label>Netflix</label><div class="iw"><span>€</span><input type="number" id="f-net" value="13.99" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Spotify</label><div class="iw"><span>€</span><input type="number" id="f-spo" value="10.99" min="0" step="0.01" oninput="go()"></div></div>
+    <div class="fr"><label>Bunq</label><div class="iw"><span>€</span><input type="number" id="f-bunq" value="9.99" min="0" step="0.01" oninput="go()"></div></div>
+
+    <div class="ctot"><span class="cl">Subtotaal vaste lasten</span><span class="cv" id="t-vast">€ 0</span></div>
+  </div>
+
+  <!-- Boodschappen -->
+  <div class="tcard">
+    <h3>Boodschappen</h3>
+    <div class="prog-label"><span id="bood-spent" style="font-weight:500">€ 0</span><span style="color:#888">budget € 650</span></div>
+    <div class="prog-track"><div class="prog-fill" id="bood-bar" style="width:0%;background:#1D9E75"></div></div>
+    <div class="fr"><label class="dim">Week 1</label><div class="iw"><span>€</span><input type="number" id="f-bw1" value="150" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label class="dim">Week 2</label><div class="iw"><span>€</span><input type="number" id="f-bw2" value="150" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label class="dim">Week 3</label><div class="iw"><span>€</span><input type="number" id="f-bw3" value="150" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label class="dim">Week 4</label><div class="iw"><span>€</span><input type="number" id="f-bw4" value="150" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label class="dim">Week 5</label><div class="iw"><span>€</span><input type="number" id="f-bw5" value="50" min="0" step="1" oninput="go()"></div></div>
+    <div class="dev-row"><span style="color:#888">Afwijking</span><span id="bood-dev" style="font-weight:500"></span></div>
+  </div>
+
+  <!-- Extra uitgaven -->
+  <div class="card">
+    <h3>Extra uitgaven</h3>
+    <div class="fr"><label>Tanken</label><div class="iw"><span>€</span><input type="number" id="f-tank" value="0" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label>Uitgaan</label><div class="iw"><span>€</span><input type="number" id="f-uit" value="100" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label>Kleding</label><div class="iw"><span>€</span><input type="number" id="f-kled" value="0" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label>Overig</label><div class="iw"><span>€</span><input type="number" id="f-xov" value="0" min="0" step="1" oninput="go()"></div></div>
+    <div class="ctot"><span class="cl">Totaal extra uitgaven</span><span class="cv" id="t-ext">€ 0</span></div>
+  </div>
+
+  <!-- Over -->
+  <div id="over-box" class="over-box pos-bg">
+    <div>
+      <div style="font-size:12px;color:#666">Onder de streep</div>
+      <div style="font-size:14px;font-weight:500;margin:3px 0" id="over-lbl">Over mei 2026</div>
+      <div style="font-size:11px;color:#888">Volgende maand automatisch meegenomen</div>
+    </div>
+    <div class="ov pos" id="over-val">€ 0</div>
+  </div>
+
+  <!-- Vrij besteedbaar -->
+  <div class="card">
+    <h3>Vrij besteedbaar</h3>
+    <div class="bdr"><span style="color:#666">Totaal over</span><span id="bd-over" style="font-weight:500">€ 0</span></div>
+    <div class="bdr" style="border-top:1px solid #ddd;padding-top:8px;margin-top:2px">
+      <span style="font-weight:500;font-size:14px">Vrij besteedbaar</span>
+      <span id="bd-vrij" style="font-size:16px;font-weight:500">€ 0</span>
+    </div>
+  </div>
+
+  <!-- Potjes / saldo -->
+  <div class="card">
+    <h3>Potjes &amp; saldo</h3>
+    <p style="font-size:11px;color:#888;margin-bottom:10px">Vul hieronder de huidige stand van je potjes in. Wordt per maand bijgehouden.</p>
+    <div class="sgrid">
+      <div class="si">
+        <p class="sil">Bufferpot</p>
+        <p class="siv pos" id="s-buf">€ 0</p>
+        <p class="sii">Inleg: <span id="si-buf">€ 0</span>/mnd</p>
+      </div>
+      <div class="si">
+        <p class="sil">Vaste lasten pot</p>
+        <p class="siv pos" id="s-vlp">€ 0</p>
+        <p class="sii">Inleg: <span id="si-vlp">€ 0</span>/mnd</p>
+      </div>
+      <div class="si">
+        <p class="sil">Lopende rekening</p>
+        <p class="siv" id="s-lr">€ 0</p>
+        <p class="sii">Handmatig bijwerken</p>
+      </div>
+      <div class="si">
+        <p class="sil">Contant geld</p>
+        <p class="siv" id="s-cont">€ 0</p>
+        <p class="sii">Handmatig bijwerken</p>
+      </div>
+      <div class="si" style="grid-column:1/-1">
+        <p class="sil">Geld bij mama</p>
+        <p class="siv" id="s-mama">€ 0</p>
+        <p class="sii">Handmatig bijwerken</p>
+      </div>
+    </div>
+
+    <!-- Maandelijkse inleg voor potjes -->
+    <div style="margin-top:12px;border-top:1px solid #eee;padding-top:10px">
+      <div style="font-size:11px;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Maandelijkse inleg potjes</div>
+      <div class="fr"><label>Inleg bufferpot</label><div class="iw"><span>€</span><input type="number" id="f-ibuf" value="50" min="0" step="1" oninput="go()"></div></div>
+      <div class="fr"><label>Inleg vaste lasten pot</label><div class="iw"><span>€</span><input type="number" id="f-ivlp" value="50" min="0" step="1" oninput="go()"></div></div>
+    </div>
+
+    <!-- Startbedragen -->
+    <div style="margin-top:12px;border-top:1px solid #eee;padding-top:10px">
+      <div style="font-size:11px;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Huidige stand (eenmalig instellen)</div>
+      <div class="starts-grid">
+        <div class="fr"><label class="dim">Bufferpot start</label><div class="iw"><span>€</span><input type="number" id="st-buf" value="600" min="0" step="1" oninput="calcSaldo()"></div></div>
+        <div class="fr"><label class="dim">Vaste lasten pot</label><div class="iw"><span>€</span><input type="number" id="st-vlp" value="100" min="0" step="1" oninput="calcSaldo()"></div></div>
+        <div class="fr"><label class="dim">Lopende rekening</label><div class="iw"><span>€</span><input type="number" id="st-lr" value="113.47" min="0" step="0.01" oninput="calcSaldo()"></div></div>
+        <div class="fr"><label class="dim">Contant geld</label><div class="iw"><span>€</span><input type="number" id="st-cont" value="0" min="0" step="0.01" oninput="calcSaldo()"></div></div>
+        <div class="fr" style="grid-column:1/-1"><label class="dim">Geld bij mama</label><div class="iw"><span>€</span><input type="number" id="st-mama" value="0" min="0" step="0.01" oninput="calcSaldo()"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Jaaroverzicht -->
+  <div class="card">
+    <h3 id="chart-title">Jaaroverzicht</h3>
+    <div class="chart-wrap"><canvas id="jaarchart"></canvas></div>
+  </div>
+
+  <p class="footer">Automatisch opgeslagen &bull; <span id="saved-t"></span></p>
+</div>
+
+<script>
+const MN=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const _now=new Date(); let cy=_now.getFullYear(), cm=_now.getMonth(), jChart=null, iphOpen=false;
+
+const FLD=['sal','bel','vor','hur','verz','vink','eigb','kpn','odi','vatt','vit','sant','duo','gemb','nbd','net','spo','bunq','bw1','bw2','bw3','bw4','bw5','tank','uit','kled','xov','ibuf','ivlp'];
+const DEF={sal:'2830',bel:'0',vor:'0',hur:'497.55',verz:'8.00',vink:'155.85',eigb:'38.50',kpn:'35.00',odi:'84.78',vatt:'131.00',vit:'12.00',sant:'64.64',duo:'25.00',gemb:'150.00',nbd:'17.93',net:'13.99',spo:'10.99',bunq:'9.99',bw1:'150',bw2:'150',bw3:'150',bw4:'150',bw5:'50',tank:'0',uit:'100',kled:'0',xov:'0',ibuf:'50',ivlp:'50'};
+
+function mk(y,m){return 'dan5_'+y+'_'+m;}
+function pmk(){let m=cm-1,y=cy; if(m<0){m=11;y--;} return mk(y,m);}
+function g(id){return parseFloat(document.getElementById('f-'+id)?.value||0)||0;}
+function fv(n){return '€ '+Math.abs(n).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function dv(d,k){return parseFloat(d[k]||0)||0;}
+
+function calc(d){
+  const ink = dv(d,'sal')+dv(d,'bel')+dv(d,'vor');
+  const vf  = dv(d,'hur')+dv(d,'verz')+dv(d,'vink')+dv(d,'eigb')+dv(d,'kpn')+dv(d,'odi')+dv(d,'vatt')+dv(d,'vit')+dv(d,'sant')+dv(d,'duo')+dv(d,'gemb')+dv(d,'nbd')+dv(d,'net')+dv(d,'spo')+dv(d,'bunq');
+  const bood = dv(d,'bw1')+dv(d,'bw2')+dv(d,'bw3')+dv(d,'bw4')+dv(d,'bw5');
+  const ext  = dv(d,'tank')+dv(d,'uit')+dv(d,'kled')+dv(d,'xov');
+  const inleg= dv(d,'ibuf')+dv(d,'ivlp');
+  const vast = vf+bood;
+  return {ink, vf, bood, ext, inleg, vast, over: ink - vast - ext - inleg};
+}
+
+function setDev(id,actual,budget){
+  const d=budget-actual;
+  const el=document.getElementById(id);
+  el.textContent=(d>=0?'+ ':'− ')+fv(d);
+  el.style.color=d>=0?'#0f6e56':'#a32d2d';
+}
+
+function toggleIphone(){
+  iphOpen=!iphOpen;
+  document.getElementById('iph-card').style.display=iphOpen?'block':'none';
+  document.getElementById('iph-arr').textContent=iphOpen?'▼':'▶';
+}
+
+function calcSaldo(){
+  const sb=parseFloat(document.getElementById('st-buf').value)||0;
+  const sv=parseFloat(document.getElementById('st-vlp').value)||0;
+  const slr=parseFloat(document.getElementById('st-lr').value)||0;
+  const sc=parseFloat(document.getElementById('st-cont').value)||0;
+  const sm=parseFloat(document.getElementById('st-mama').value)||0;
+  localStorage.setItem('dan5_starts',JSON.stringify({buf:sb,vlp:sv,lr:slr,cont:sc,mama:sm}));
+
+  let buf=sb, vlp=sv, cbuf=0, cvlp=0;
+  for(let y=2025;y<=cy;y++){
+    const em=(y===cy)?cm:11;
+    for(let m=0;m<=em;m++){
+      const raw=localStorage.getItem(mk(y,m));
+      if(raw){
+        const r=JSON.parse(raw);
+        buf+=dv(r,'ibuf'); vlp+=dv(r,'ivlp');
+        if(y===cy&&m===cm){cbuf=dv(r,'ibuf'); cvlp=dv(r,'ivlp');}
+      }
+    }
+  }
+  document.getElementById('s-buf').textContent=fv(buf);
+  document.getElementById('s-vlp').textContent=fv(vlp);
+  document.getElementById('s-lr').textContent=fv(slr);
+  document.getElementById('s-cont').textContent=fv(sc);
+  document.getElementById('s-mama').textContent=fv(sm);
+  document.getElementById('si-buf').textContent=fv(cbuf);
+  document.getElementById('si-vlp').textContent=fv(cvlp);
+}
+
+function buildChart(){
+  const lbArr=[],inkArr=[],uitArr=[],ovArr=[];
+  for(let m=0;m<12;m++){
+    lbArr.push(MN[m].slice(0,3));
+    const raw=localStorage.getItem(mk(cy,m));
+    if(raw){const r=calc(JSON.parse(raw));inkArr.push(r.ink);uitArr.push(r.vast+r.ext+r.inleg);ovArr.push(r.over);}
+    else{inkArr.push(m<=cm?0:null);uitArr.push(m<=cm?0:null);ovArr.push(m<=cm?0:null);}
+  }
+  const ctx=document.getElementById('jaarchart').getContext('2d');
+  if(jChart)jChart.destroy();
+  jChart=new Chart(ctx,{data:{labels:lbArr,datasets:[
+    {type:'bar',label:'Inkomsten',data:inkArr,backgroundColor:'rgba(29,158,117,.22)',borderColor:'rgba(29,158,117,.7)',borderWidth:1,borderRadius:3},
+    {type:'bar',label:'Uitgaven',data:uitArr,backgroundColor:'rgba(226,75,74,.18)',borderColor:'rgba(226,75,74,.55)',borderWidth:1,borderRadius:3},
+    {type:'line',label:'Over',data:ovArr,borderColor:'#378ADD',backgroundColor:'transparent',borderWidth:2,pointRadius:3,pointBackgroundColor:'#378ADD',tension:.3}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{font:{size:11},boxWidth:12,padding:10}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fv(c.raw||0)}}},scales:{x:{grid:{color:'rgba(0,0,0,.06)'},ticks:{font:{size:11}}},y:{grid:{color:'rgba(0,0,0,.06)'},ticks:{font:{size:11},callback:v=>'€'+Math.round(v/1000)+'k'}}}}});
+}
+
+function save(){
+  const d={}; FLD.forEach(id=>{const el=document.getElementById('f-'+id);if(el)d[id]=el.value;});
+  localStorage.setItem(mk(cy,cm),JSON.stringify(d));
+}
+
+function load(){
+  const raw=localStorage.getItem(mk(cy,cm));
+  const vn=document.getElementById('vnote');
+  if(raw){
+    const d=JSON.parse(raw);
+    FLD.forEach(id=>{const el=document.getElementById('f-'+id);if(el&&d[id]!==undefined)el.value=d[id];});
+    if(vn)vn.textContent='';
+  } else {
+    FLD.forEach(id=>{const el=document.getElementById('f-'+id);if(el)el.value=DEF[id]||'0';});
+    const prev=localStorage.getItem(pmk());
+    if(prev){
+      const po=calc(JSON.parse(prev)).over;
+      if(po>0){
+        const el=document.getElementById('f-vor');
+        if(el)el.value=po.toFixed(2);
+        if(vn)vn.textContent='Overgenomen van '+(cm>0?MN[cm-1]:MN[11]);
+      }
+    }
+  }
+  const starts=JSON.parse(localStorage.getItem('dan5_starts')||'{}');
+  if(starts.buf!==undefined) document.getElementById('st-buf').value=starts.buf;
+  if(starts.vlp!==undefined) document.getElementById('st-vlp').value=starts.vlp;
+  if(starts.lr!==undefined)  document.getElementById('st-lr').value=starts.lr;
+  if(starts.cont!==undefined)document.getElementById('st-cont').value=starts.cont;
+  if(starts.mama!==undefined)document.getElementById('st-mama').value=starts.mama;
+}
+
+function go(){
+  save();
+  const cur={}; FLD.forEach(id=>{const el=document.getElementById('f-'+id);if(el)cur[id]=el.value;});
+  const r=calc(cur);
+
+  document.getElementById('s-in').textContent=fv(r.ink);
+  document.getElementById('s-uit').textContent=fv(r.vast+r.ext+r.inleg);
+  const so=document.getElementById('s-over');
+  so.textContent=(r.over<0?'− ':'')+fv(r.over);
+  so.className='sv '+(r.over>=0?'pos':'neg');
+
+  document.getElementById('t-in').textContent=fv(r.ink);
+  document.getElementById('t-vast').textContent=fv(r.vf);
+  document.getElementById('t-ext').textContent=fv(r.ext);
+
+  document.getElementById('bood-spent').textContent=fv(r.bood);
+  const bp=Math.min(100,Math.round((r.bood/650)*100));
+  document.getElementById('bood-bar').style.width=bp+'%';
+  document.getElementById('bood-bar').style.background=r.bood<=650?'#1D9E75':'#E24B4A';
+  setDev('bood-dev',r.bood,650);
+
+  const ob=document.getElementById('over-box');
+  ob.className='over-box '+(r.over>=0?'pos-bg':'neg-bg');
+  const ov=document.getElementById('over-val');
+  ov.textContent=(r.over<0?'− ':'')+fv(r.over);
+  ov.className='ov '+(r.over>=0?'pos':'neg');
+  document.getElementById('over-lbl').textContent='Over '+MN[cm]+' '+cy;
+
+  document.getElementById('bd-over').textContent=(r.over<0?'− ':'')+fv(r.over);
+  const vj=document.getElementById('bd-vrij');
+  vj.textContent=(r.over<0?'− ':'')+fv(r.over);
+  vj.style.color=r.over>=0?'#0f6e56':'#a32d2d';
+
+  calcSaldo();
+  document.getElementById('chart-title').textContent='Jaaroverzicht '+cy;
+  buildChart();
+  document.getElementById('saved-t').textContent=new Date().toLocaleString('nl-NL',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+}
+
+function shiftM(dir){
+  cm+=dir; if(cm>11){cm=0;cy++;} if(cm<0){cm=11;cy--;}
+  document.getElementById('mlbl').textContent=MN[cm]+' '+cy;
+  load(); go();
+}
+
+document.getElementById('mlbl').textContent=MN[cm]+' '+cy;
+load();
+go();
+</script>
+</body>
+</html>
