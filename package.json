@@ -1,0 +1,8 @@
+{
+  "name": "financiele-calculators-bank-sync",
+  "version": "1.0.0",
+  "description": "Nordigen bank sync for financiele calculators",
+  "dependencies": {
+    "@netlify/blobs": "^7.0.0"
+  }
+}
