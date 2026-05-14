@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank koppelen</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4ff; min-height: 100vh; padding: 24px 16px; color: #111; }
+.wrap { max-width: 480px; margin: 0 auto; }
+h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.sub { font-size: 13px; color: #666; margin-bottom: 28px; }
+.card { background: #fff; border: 1px solid #d0d8f0; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+.card h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.card p { font-size: 13px; color: #555; margin-bottom: 14px; }
+.status { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 14px; padding: 8px 12px; border-radius: 8px; background: #f5f5f2; }
+.status.linked { background: #e6f5ee; color: #1a7a4a; }
+.status.not-linked { background: #fff3e0; color: #8a5a00; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot.green { background: #1D9E75; }
+.dot.orange { background: #f59e0b; }
+button { display: block; width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+button:hover { opacity: .85; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary { background: #3355a0; color: #fff; }
+.btn-danger { background: #fee2e2; color: #991b1b; margin-top: 8px; font-size: 13px; font-weight: 500; padding: 8px; }
+.msg { padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; display: none; }
+.msg.ok { background: #e6f5ee; color: #1a7a4a; border: 1px solid #b2dfce; }
+.msg.err { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.back { display: inline-block; margin-top: 20px; font-size: 13px; color: #3355a0; text-decoration: none; }
+.back:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Bank koppelen</h1>
+  <p class="sub">Koppel je Rabobank en/of Bunq aan de calculator. Alleen-lezen toegang via PSD2.</p>
+  <div id="msg-global" class="msg"></div>
+  <div class="card">
+    <h2>Rabobank</h2>
+    <p>Je betaalrekening bij de Rabobank.</p>
+    <div id="status-rabobank" class="status not-linked"><div class="dot orange"></div><span>Nog niet gekoppeld</span></div>
+    <button class="btn-primary" id="btn-rabobank" onclick="connectBank('rabobank')">Rabobank koppelen</button>
+    <button class="btn-danger" id="btn-unlink-rabobank" style="display:none" onclick="unlinkBank('rabobank')">Koppeling verwijderen</button>
+  </div>
+  <div class="card">
+    <h2>Bunq</h2>
+    <p>Je Bunq-rekening (NL89 BUNQ 2148 3951 06).</p>
+    <div id="status-bunq" class="status not-linked"><div class="dot orange"></div><span>Nog niet gekoppeld</span></div>
+    <button class="btn-primary" id="btn-bunq" onclick="connectBank('bunq')">Bunq koppelen</button>
+    <button class="btn-danger" id="btn-unlink-bunq" style="display:none" onclick="unlinkBank('bunq')">Koppeling verwijderen</button>
+  </div>
+  <div class="card">
+    <h2>Hoe werkt het?</h2>
+    <p>Na het koppelen haalt de calculator automatisch je recente transacties op. Je bankgegevens worden nooit opgeslagen op een server.</p>
+    <p style="margin-top:8px"><strong>Veiligheid:</strong> Alleen-lezen toegang. De calculator kan nooit betalingen doen.</p>
+  </div>
+  <a class="back" href="financiele-calculator.html">Terug naar de calculator</a>
+</div>
+<script>
+(async function() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get("callback") === "1") {
+    const bank = p.get("bank"), ref = p.get("ref");
+    const rid = ref || localStorage.getItem("pending_req_" + bank);
+    if (rid && bank) { await doCallback(bank, rid); }
+    else { showMsg("Koppeling onvolledig. Probeer opnieuw.", "err"); }
+    history.replaceState({}, "", window.location.pathname);
+  }
+  loadStatus();
+})();
+
+async function connectBank(bank) {
+  const btn = document.getElementById("btn-" + bank);
+  btn.disabled = true; btn.textContent = "Bezig...";
+  try {
+    const res = await fetch("/.netlify/functions/bank-link?bank=" + bank);
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || "Fout");
+    localStorage.setItem("pending_req_" + bank, data.requisition_id);
+    window.location.href = data.link;
+  } catch(e) {
+    showMsg("Fout: " + e.message, "err");
+    btn.disabled = false;
+    btn.textContent = (bank === "rabobank" ? "Rabobank" : "Bunq") + " koppelen";
+  }
+}
+
+async function doCallback(bank, rid) {
+  try {
+    const res = await fetch("/.netlify/functions/bank-callback?bank=" + bank + "&ref=" + rid);
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || "Mislukt");
+    if (data.success) {
+      const lnk = JSON.parse(localStorage.getItem("linked_banks") || "{}");
+      lnk[bank] = { linked_at: new Date().toISOString(), accounts: data.accounts_found };
+      localStorage.setItem("linked_banks", JSON.stringify(lnk));
+      localStorage.removeItem("pending_req_" + bank);
+      showMsg((bank === "rabobank" ? "Rabobank" : "Bunq") + " gekoppeld! " + data.accounts_found + " rekening(en).", "ok");
+    } else { showMsg(data.message || "Onvolledig.", "err"); }
+  } catch(e) { showMsg("Fout: " + e.message, "err"); }
+}
+
+function loadStatus() {
+  const lnk = JSON.parse(localStorage.getItem("linked_banks") || "{}");
+  ["rabobank","bunq"].forEach(bank => {
+    const s = document.getElementById("status-" + bank);
+    const dot = s.querySelector(".dot"), span = s.querySelector("span");
+    const btn = document.getElementById("btn-" + bank);
+    const u = document.getElementById("btn-unlink-" + bank);
+    if (lnk[bank]) {
+      const d = new Date(lnk[bank].linked_at).toLocaleDateString("nl-NL",{day:"numeric",month:"long"});
+      s.className = "status linked"; dot.className = "dot green";
+      span.textContent = "Gekoppeld op " + d + " (" + (lnk[bank].accounts||"?") + " rekening(en))";
+      btn.textContent = "Opnieuw koppelen"; u.style.display = "";
+    }
+  });
+}
+
+function unlinkBank(bank) {
+  if (!confirm("Koppeling " + bank + " verwijderen?")) return;
+  const lnk = JSON.parse(localStorage.getItem("linked_banks") || "{}");
+  delete lnk[bank]; localStorage.setItem("linked_banks", JSON.stringify(lnk));
+  loadStatus(); showMsg((bank==="rabobank"?"Rabobank":"Bunq") + " verwijderd.", "ok");
+}
+
+function showMsg(t, type) {
+  const el = document.getElementById("msg-global");
+  el.textContent = t; el.className = "msg " + type; el.style.display = "";
+  setTimeout(function(){ el.style.display="none"; }, 6000);
+}
+</script>
+</body>
+</html>
