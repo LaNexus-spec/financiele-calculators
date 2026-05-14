@@ -162,6 +162,36 @@ h1 { font-size: 20px; font-weight: 700; margin-bottom: 1.25rem; color: #111; }
 /* week-ink row inside inkomsten */
 .week-ink-row { background: #f0f4ff; border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
 .week-ink-row label { flex: 1; font-size: 13px; color: #3355a0; font-weight: 500; }
+
+/* ===== SLIMME BOODSCHAPPEN ===== */
+.bood-check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0 12px; }
+.bood-check-item { display: flex; align-items: center; gap: 8px; background: #f5f7ff; border: 1px solid #d8e0f8; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: background .15s; }
+.bood-check-item:hover { background: #e8eeff; }
+.bood-check-item input[type=checkbox] { width: 15px; height: 15px; accent-color: #3355a0; cursor: pointer; flex-shrink: 0; }
+.bood-check-item label { font-size: 13px; cursor: pointer; line-height: 1.3; }
+.bood-check-item label .bood-icon { font-size: 16px; margin-right: 4px; }
+.btn-bood-zoek { width: 100%; background: #3355a0; color: #fff; border: none; border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 12px; }
+.btn-bood-zoek:hover { opacity: .88; }
+.bood-result { display: none; }
+.bood-result.active { display: block; }
+.bood-winkel-card { background: #f5f7ff; border: 1px solid #d0d8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+.bood-winkel-title { font-size: 13px; font-weight: 700; color: #1e3a8a; margin-bottom: 4px; }
+.bood-winkel-cats { font-size: 12px; color: #555; margin-bottom: 4px; }
+.bood-winkel-tip { font-size: 11px; color: #0f6e56; background: #e6f5ee; border-radius: 5px; padding: 3px 7px; display: inline-block; margin-top: 3px; }
+.bood-sep { font-size: 11px; font-weight: 700; color: #3355a0; text-transform: uppercase; letter-spacing: .05em; margin: 10px 0 4px; }
+
+/* Tips accordion */
+.tips-toggle { width: 100%; background: none; border: 1px solid #d0d8f0; border-radius: 8px; padding: 9px 12px; font-size: 13px; font-weight: 600; color: #3355a0; cursor: pointer; text-align: left; display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+.tips-toggle:hover { background: #f0f4ff; }
+.tips-body { display: none; margin-top: 8px; }
+.tips-body.open { display: block; }
+.tip-row { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f0f0ee; font-size: 13px; align-items: flex-start; }
+.tip-row:last-child { border-bottom: none; }
+.tip-row .tip-icon { font-size: 16px; flex-shrink: 0; width: 22px; }
+.tip-row .tip-txt { flex: 1; color: #333; line-height: 1.45; }
+.tip-row .tip-txt strong { color: #111; }
+.tip-app-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.tip-app-chip { background: #e8eeff; color: #1e3a8a; border-radius: 20px; padding: 4px 10px; font-size: 12px; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -196,6 +226,59 @@ h1 { font-size: 20px; font-weight: 700; margin-bottom: 1.25rem; color: #111; }
     <div class="sc"><p class="sl">Inkomsten</p><p class="sv" id="s-in">€ 0</p></div>
     <div class="sc"><p class="sl">Uitgaven</p><p class="sv" id="s-uit">€ 0</p></div>
     <div class="sc"><p class="sl">Over</p><p class="sv" id="s-over">€ 0</p></div>
+  </div>
+
+  <!-- SLIMME BOODSCHAPPEN -->
+  <div class="card" id="card-bood-slim">
+    <h3>Slimme boodschappen in Amsterdam</h3>
+    <p style="font-size:12px;color:#666;margin-bottom:10px">Wat heb je nodig deze week? Kies de categorie, dan zie je waar je het goedkoopst terecht kunt.</p>
+
+    <div class="bood-check-grid">
+      <div class="bood-check-item"><input type="checkbox" id="bc-groenten" value="groenten"><label for="bc-groenten"><span class="bood-icon">🥦</span>Groenten &amp; fruit</label></div>
+      <div class="bood-check-item"><input type="checkbox" id="bc-vlees" value="vlees"><label for="bc-vlees"><span class="bood-icon">🥩</span>Vlees &amp; vis</label></div>
+      <div class="bood-check-item"><input type="checkbox" id="bc-zuivel" value="zuivel"><label for="bc-zuivel"><span class="bood-icon">🧀</span>Zuivel &amp; eieren</label></div>
+      <div class="bood-check-item"><input type="checkbox" id="bc-brood" value="brood"><label for="bc-brood"><span class="bood-icon">🍞</span>Brood &amp; bakkerij</label></div>
+      <div class="bood-check-item"><input type="checkbox" id="bc-diepvries" value="diepvries"><label for="bc-diepvries"><span class="bood-icon">🧊</span>Diepvries</label></div>
+      <div class="bood-check-item"><input type="checkbox" id="bc-pasta" value="pasta"><label for="bc-pasta"><span class="bood-icon">🍝</span>Pasta &amp; rijst</label></div>
+      <div class="bood-check-item"><input type="checkbox" id="bc-snacks" value="snacks"><label for="bc-snacks"><span class="bood-icon">🍫</span>Snacks &amp; tussendoor</label></div>
+      <div class="bood-check-item"><input type="checkbox" id="bc-hygiene" value="hygiene"><label for="bc-hygiene"><span class="bood-icon">🧴</span>Hygi&euml;ne &amp; schoonmaak</label></div>
+    </div>
+
+    <button class="btn-bood-zoek" onclick="zoekBoodschappen()">Laat zien waar het goedkoopst is</button>
+
+    <div id="bood-result" class="bood-result"></div>
+
+    <!-- Tips & tricks toggle -->
+    <button class="tips-toggle" onclick="toggleTips()">
+      <span>💡 Tips &amp; tricks voor goedkoop boodschappen</span>
+      <span id="tips-arr">▶</span>
+    </button>
+    <div class="tips-body" id="tips-body">
+      <div class="bood-sep">Winkels in Amsterdam</div>
+      <div class="tip-row"><div class="tip-icon">🏪</div><div class="tip-txt"><strong>Dirk van den Broek</strong> &ndash; Goedkoopste grote supermarkt van Amsterdam. Altijd lage prijzen op groenten, vlees en zuivel. Meerdere vestigingen in Amsterdam.</div></div>
+      <div class="tip-row"><div class="tip-icon">🏪</div><div class="tip-txt"><strong>Aldi</strong> &ndash; Elke donderdag nieuwe aanbiedingen (Aldi Weekly Deals). Eigen merken zijn tot 40% goedkoper dan A-merken. Goed voor zuivel, brood en diepvries.</div></div>
+      <div class="tip-row"><div class="tip-icon">🏪</div><div class="tip-txt"><strong>Lidl</strong> &ndash; Elke maandag nieuwe aanbiedingen. Vers brood uit eigen oven, goedkoop vlees en zuivel. Lidl Plus app geeft extra kortingen.</div></div>
+      <div class="tip-row"><div class="tip-icon">🛒</div><div class="tip-txt"><strong>Dappermarkt</strong> &ndash; Dinsdag, donderdag &amp; zaterdag. Goedkoopste groenten en fruit van Amsterdam. Spotprijzen, zeker op het einde van de markt.</div></div>
+      <div class="tip-row"><div class="tip-icon">🛒</div><div class="tip-txt"><strong>Albert Cuypmarkt</strong> &ndash; Maandag t/m zaterdag. Verse groenten, fruit en vis voor lage prijzen. Tip: ga een uur voor sluitingstijd voor extra koopjes.</div></div>
+      <div class="bood-sep" style="margin-top:12px">Slimme gewoontes</div>
+      <div class="tip-row"><div class="tip-icon">📅</div><div class="tip-txt"><strong>Check folders op woensdag</strong> &ndash; De meeste supermarkten starten hun nieuwe aanbiedingen op woensdag of donderdag. Dirk: dinsdag, Aldi: donderdag, Lidl: maandag.</div></div>
+      <div class="tip-row"><div class="tip-icon">⏰</div><div class="tip-txt"><strong>Avondkorting</strong> &ndash; Veel supermarkten geven 25-50% korting op vers vlees, brood en zuivel die dezelfde dag worden afgewaardeerd. Ga rond 18-19u.</div></div>
+      <div class="tip-row"><div class="tip-icon">🔄</div><div class="tip-txt"><strong>Huismerk kiezen</strong> &ndash; Aldi en Lidl huismerken zijn vaak identiek aan A-merken maar 30-40% goedkoper. Zuivel en pasta zijn goede beginpunten.</div></div>
+      <div class="tip-row"><div class="tip-icon">🧊</div><div class="tip-txt"><strong>Diepvries groenten</strong> &ndash; Diepvriesgroenten zijn net zo voedzaam als vers maar veel goedkoper en gaan langer mee. Koop in bulk bij Aldi of Lidl.</div></div>
+      <div class="bood-sep" style="margin-top:12px">Handige apps</div>
+      <div class="tip-app-row">
+        <span class="tip-app-chip">📱 Too Good To Go</span>
+        <span class="tip-app-chip">🛒 Lidl Plus</span>
+        <span class="tip-app-chip">🛒 Dirk app</span>
+        <span class="tip-app-chip">🛒 AH Bonuskaart</span>
+        <span class="tip-app-chip">📰 Folder.nl</span>
+        <span class="tip-app-chip">🍱 Karma Food</span>
+      </div>
+      <div style="font-size:11px;color:#888;margin-top:8px;line-height:1.5">
+        <strong>Too Good To Go</strong>: Haal een "magic box" met voedsel dat anders weggegooid wordt &ndash; voor €3-5 krijg je €10-15 aan boodschappen.<br>
+        <strong>Folder.nl</strong>: Vergelijk alle supermarktfolders op &eacute;&eacute;n plek.
+      </div>
+    </div>
   </div>
 
   <!-- WEEKBUDGET HERO CARD -->
@@ -349,7 +432,7 @@ h1 { font-size: 20px; font-weight: 700; margin-bottom: 1.25rem; color: #111; }
   <!-- Extra uitgaven -->
   <div class="card">
     <h3>Extra uitgaven</h3>
-    <div class="fr"><label>Tanken</label><div class="iw"><span>€</span><input type="number" id="f-tank" value="0" min="0" step="1" oninput="go()"></div></div>
+    <div class="fr"><label>Reiskosten (OV, auto, tanken)</label><div class="iw"><span>€</span><input type="number" id="f-tank" value="0" min="0" step="1" oninput="go()"></div></div>
     <div class="fr"><label>Uitgaan</label><div class="iw"><span>€</span><input type="number" id="f-uit" value="0" min="0" step="1" oninput="go()"></div></div>
     <div class="fr"><label>Kleding</label><div class="iw"><span>€</span><input type="number" id="f-kled" value="0" min="0" step="1" oninput="go()"></div></div>
     <div class="fr"><label>Overig</label><div class="iw"><span>€</span><input type="number" id="f-xov" value="0" min="0" step="1" oninput="go()"></div></div>
@@ -499,10 +582,14 @@ function updateWeekCard(ink, vf) {
   wkVals.forEach((spent, idx) => {
     const i = idx+1;
     const pct = weekVrijPos > 0 ? Math.min(100, Math.round((spent/weekVrijPos)*100)) : (spent>0?100:0);
-    const col = pct < 75 ? colors.ok : pct < 100 ? colors.let : colors.danger;
+    const col = pct < 90 ? colors.ok : pct < 100 ? colors.let : colors.danger;
     document.getElementById('wk-b'+i).style.width = pct+'%';
     document.getElementById('wk-b'+i).style.background = col;
-    document.getElementById('wk-c'+i).textContent = fv(spent)+' / '+fv(weekVrijPos);
+    // Caption: show pct warning at 90%+
+    let caption = fv(spent)+' / '+fv(weekVrijPos);
+    if(pct >= 100) caption += ' 🚨';
+    else if(pct >= 90) caption += ' ⚠️ 90%+';
+    document.getElementById('wk-c'+i).textContent = caption;
   });
 
   // Safety check
@@ -540,16 +627,117 @@ function safetyCheck(weekVrij, totalSpent, weeksWithData, invOpen, monthVrij) {
     warn.className='safety-warn sw-danger';
     iconEl.textContent='🚨';
     txtEl.textContent='Opgelet: bij dit tempo kom je deze maand '+fv(overBy)+' tekort voor je facturen.';
-  } else if(projMonthly > monthFreeNet * 0.75) {
+  } else if(projMonthly > monthFreeNet * 0.90) {
     warn.className='safety-warn sw-let';
     iconEl.textContent='⚠️';
-    txtEl.textContent='Let op: je geeft meer dan 75% van je vrije budget uit.';
+    txtEl.textContent='Let op: je hebt al meer dan 90% van je maandbudget opgemaakt. Rem een beetje af.';
   } else {
     warn.className='safety-warn sw-ok';
     iconEl.textContent='✅';
     const overhoudt = monthFreeNet - projMonthly;
     txtEl.textContent='Alles op schema. Prognose: '+fv(overhoudt)+' over aan einde van de maand.';
   }
+}
+
+// ── Grocery suggestion engine ────────────────────────────────────────────────
+const WINKELS = [
+  {
+    naam: '🏪 Dirk van den Broek',
+    adres: 'Meerdere vestigingen in Amsterdam',
+    cats: ['groenten','vlees','zuivel','brood','pasta','snacks','hygiene'],
+    tip: 'Altijd lage vaste prijzen. Geen app nodig. Beste all-round keuze.',
+    extra: 'Folder elke dinsdag. Grote verse afdeling met vlees en groenten.'
+  },
+  {
+    naam: '🏪 Aldi',
+    adres: 'Bijv. Bos en Lommerplein, Osdorpplein, Wibautstraat',
+    cats: ['zuivel','brood','diepvries','pasta','snacks','hygiene','groenten'],
+    tip: 'Elke donderdag nieuwe Aldi Weekly Deals. Eigen merk = grote besparing.',
+    extra: 'Diepvries groenten en pasta: spotprijzen. Goed voor weekboodschappen in bulk.'
+  },
+  {
+    naam: '🏪 Lidl',
+    adres: 'Bijv. Haarlemmerweg, Jan van Galenstraat, Oostpoort',
+    cats: ['brood','vlees','zuivel','diepvries','pasta','snacks','groenten'],
+    tip: 'Elke maandag nieuwe aanbiedingen. Vers brood uit eigen oven.',
+    extra: 'Download Lidl Plus app voor extra kortingen en digitale bonnen.'
+  },
+  {
+    naam: '🛒 Dappermarkt',
+    adres: 'Dapperstraat, Oost – di, do, za 9:00-17:00',
+    cats: ['groenten','vlees','brood'],
+    tip: 'Goedkoopste verse groenten en fruit van Amsterdam.',
+    extra: 'Tip: ga een uur voor sluitingstijd, dan zakken de prijzen nog verder.'
+  },
+  {
+    naam: '🛒 Albert Cuypmarkt',
+    adres: 'Albert Cuypstraat, De Pijp – ma t/m za 9:00-17:00',
+    cats: ['groenten','vlees','brood','vis'],
+    tip: 'Verse vis, groenten en fruit voor lage marktprijzen.',
+    extra: 'Een van de grootste markten van Nederland. Veel keuze en scherpe prijzen.'
+  },
+  {
+    naam: '📱 Too Good To Go (app)',
+    adres: 'Beschikbaar bij tientallen winkels in Amsterdam',
+    cats: ['brood','vlees','zuivel','groenten','snacks'],
+    tip: 'Haal een "magic box" voor €3-5 met €10-15 aan eten dat anders weggegooid wordt.',
+    extra: 'Elke avond beschikbaar bij bakkers, supermarkten en restaurants.'
+  }
+];
+
+function zoekBoodschappen() {
+  const selected = ['bc-groenten','bc-vlees','bc-zuivel','bc-brood','bc-diepvries','bc-pasta','bc-snacks','bc-hygiene']
+    .filter(id => document.getElementById(id)?.checked)
+    .map(id => id.replace('bc-',''));
+
+  const resultDiv = document.getElementById('bood-result');
+
+  if(selected.length === 0) {
+    resultDiv.className = 'bood-result active';
+    resultDiv.innerHTML = '<p style="font-size:13px;color:#888;padding:8px 0">Kies minimaal één categorie om aanbevelingen te zien.</p>';
+    return;
+  }
+
+  // Score winkels op basis van overlap
+  const scored = WINKELS.map(w => {
+    const overlap = selected.filter(s => w.cats.includes(s));
+    return { ...w, score: overlap.length, gevonden: overlap };
+  }).filter(w => w.score > 0).sort((a,b) => b.score - a.score);
+
+  if(scored.length === 0) {
+    resultDiv.className = 'bood-result active';
+    resultDiv.innerHTML = '<p style="font-size:13px;color:#888;padding:8px 0">Geen matches gevonden.</p>';
+    return;
+  }
+
+  const catLabels = {
+    groenten:'Groenten & fruit', vlees:'Vlees & vis', zuivel:'Zuivel & eieren',
+    brood:'Brood', diepvries:'Diepvries', pasta:'Pasta & rijst',
+    snacks:'Snacks', hygiene:'Hygiëne', vis:'Vis'
+  };
+
+  let html = '<div class="bood-sep">Aanbevolen winkels voor jouw boodschappen</div>';
+  scored.forEach((w, i) => {
+    const cats = w.gevonden.map(c => catLabels[c] || c).join(', ');
+    const badge = i === 0 ? ' <span style="background:#1D9E75;color:#fff;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px">BESTE KEUZE</span>' : '';
+    html += `<div class="bood-winkel-card">
+      <div class="bood-winkel-title">${w.naam}${badge}</div>
+      <div style="font-size:11px;color:#888;margin-bottom:4px">📍 ${w.adres}</div>
+      <div class="bood-winkel-cats">Goed voor: ${cats}</div>
+      <div class="bood-winkel-tip">💡 ${w.tip}</div>
+      <div style="font-size:11px;color:#666;margin-top:5px">${w.extra}</div>
+    </div>`;
+  });
+
+  resultDiv.className = 'bood-result active';
+  resultDiv.innerHTML = html;
+}
+
+let tipsOpen = false;
+function toggleTips() {
+  tipsOpen = !tipsOpen;
+  document.getElementById('tips-body').className = 'tips-body' + (tipsOpen ? ' open' : '');
+  document.getElementById('tips-arr').textContent = tipsOpen ? '▼' : '▶';
 }
 
 // ── Weekly income shortcut ────────────────────────────────────────────────────
