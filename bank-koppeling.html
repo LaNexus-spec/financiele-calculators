@@ -6,128 +6,301 @@
 <title>Bank koppelen</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4ff; min-height: 100vh; padding: 24px 16px; color: #111; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f0f4ff;
+  min-height: 100vh;
+  padding: 24px 16px;
+  color: #111;
+}
 .wrap { max-width: 480px; margin: 0 auto; }
 h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
 .sub { font-size: 13px; color: #666; margin-bottom: 28px; }
-.card { background: #fff; border: 1px solid #d0d8f0; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+
+.card {
+  background: #fff;
+  border: 1px solid #d0d8f0;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
 .card h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
 .card p { font-size: 13px; color: #555; margin-bottom: 14px; }
-.status { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 14px; padding: 8px 12px; border-radius: 8px; background: #f5f5f2; }
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #f5f5f2;
+}
 .status.linked { background: #e6f5ee; color: #1a7a4a; }
 .status.not-linked { background: #fff3e0; color: #8a5a00; }
 .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .dot.green { background: #1D9E75; }
 .dot.orange { background: #f59e0b; }
-button { display: block; width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+
+button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .15s;
+}
 button:hover { opacity: .85; }
 button:disabled { opacity: .5; cursor: not-allowed; }
 .btn-primary { background: #3355a0; color: #fff; }
 .btn-danger { background: #fee2e2; color: #991b1b; margin-top: 8px; font-size: 13px; font-weight: 500; padding: 8px; }
-.msg { padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; display: none; }
+
+.msg {
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
 .msg.ok { background: #e6f5ee; color: #1a7a4a; border: 1px solid #b2dfce; }
 .msg.err { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
 .back { display: inline-block; margin-top: 20px; font-size: 13px; color: #3355a0; text-decoration: none; }
 .back:hover { text-decoration: underline; }
+
+.spin { display: inline-block; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.iban { font-size: 11px; color: #888; margin-top: 4px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Bank koppelen</h1>
   <p class="sub">Koppel je Rabobank en/of Bunq aan de calculator. Alleen-lezen toegang via PSD2.</p>
+
   <div id="msg-global" class="msg"></div>
+
+  <!-- Rabobank -->
   <div class="card">
     <h2>Rabobank</h2>
     <p>Je betaalrekening bij de Rabobank.</p>
-    <div id="status-rabobank" class="status not-linked"><div class="dot orange"></div><span>Nog niet gekoppeld</span></div>
-    <button class="btn-primary" id="btn-rabobank" onclick="connectBank('rabobank')">Rabobank koppelen</button>
-    <button class="btn-danger" id="btn-unlink-rabobank" style="display:none" onclick="unlinkBank('rabobank')">Koppeling verwijderen</button>
+    <div id="status-rabobank" class="status not-linked">
+      <div class="dot orange"></div>
+      <span>Nog niet gekoppeld</span>
+    </div>
+    <button class="btn-primary" id="btn-rabobank" onclick="connectBank('rabobank')">
+      Rabobank koppelen
+    </button>
+    <button class="btn-danger" id="btn-unlink-rabobank" style="display:none" onclick="unlinkBank('rabobank')">
+      Koppeling verwijderen
+    </button>
   </div>
+
+  <!-- Bunq -->
   <div class="card">
     <h2>Bunq</h2>
-    <p>Je Bunq-rekening (NL89 BUNQ 2148 3951 06).</p>
-    <div id="status-bunq" class="status not-linked"><div class="dot orange"></div><span>Nog niet gekoppeld</span></div>
-    <button class="btn-primary" id="btn-bunq" onclick="connectBank('bunq')">Bunq koppelen</button>
-    <button class="btn-danger" id="btn-unlink-bunq" style="display:none" onclick="unlinkBank('bunq')">Koppeling verwijderen</button>
+    <p>Je Bunq-rekening (NL89 BUNQ 2148 3951 06). Directe koppeling via de Bunq API.</p>
+    <div id="status-bunq" class="status not-linked">
+      <div class="dot orange"></div>
+      <span>Nog niet gekoppeld</span>
+    </div>
+    <button class="btn-primary" id="btn-bunq" onclick="connectBunqDirect()">
+      Bunq koppelen
+    </button>
+    <button class="btn-danger" id="btn-unlink-bunq" style="display:none" onclick="unlinkBank('bunq')">
+      Koppeling verwijderen
+    </button>
   </div>
+
+  <!-- Bunq API key instructies -->
+  <div class="card" id="card-bunq-info" style="display:none">
+    <h2>Bunq API-sleutel instellen</h2>
+    <p>Volg deze stappen eenmalig om Bunq te koppelen:</p>
+    <ol style="font-size:13px;color:#555;padding-left:20px;line-height:2">
+      <li>Open de <strong>Bunq-app</strong> op je telefoon</li>
+      <li>Ga naar <strong>Profiel → Beveiliging → API-sleutels</strong></li>
+      <li>Tik op <strong>Nieuwe sleutel toevoegen</strong></li>
+      <li>Kies type <strong>Wildcard</strong> (werkt vanaf elk IP-adres)</li>
+      <li>Kopieer de sleutel</li>
+      <li>Ga naar <a href="https://app.netlify.com/projects/financiele-calculators/configuration/env" target="_blank" style="color:#3355a0">Netlify → Omgevingsvariabelen</a></li>
+      <li>Bewerk <strong>BUNQ_API_KEY</strong> en plak de sleutel</li>
+      <li>Klik op <strong>Opslaan</strong> en wacht op herstart</li>
+      <li>Kom terug en klik opnieuw op "Bunq koppelen"</li>
+    </ol>
+  </div>
+
+  <!-- Info -->
   <div class="card">
     <h2>Hoe werkt het?</h2>
-    <p>Na het koppelen haalt de calculator automatisch je recente transacties op. Je bankgegevens worden nooit opgeslagen op een server.</p>
-    <p style="margin-top:8px"><strong>Veiligheid:</strong> Alleen-lezen toegang. De calculator kan nooit betalingen doen.</p>
+    <p>
+      Na het koppelen haalt de calculator automatisch je recente transacties op.
+      Inkomsten en uitgaven worden herkend en ingevuld in de juiste categorie.
+      Je bankgegevens worden nooit opgeslagen op een server.
+    </p>
+    <p style="margin-top:8px">
+      <strong>Veiligheid:</strong> Alleen-lezen toegang. De calculator kan nooit betalingen doen.
+    </p>
   </div>
-  <a class="back" href="financiele-calculator.html">Terug naar de calculator</a>
+
+  <a class="back" href="financiele-calculator.html">← Terug naar de calculator</a>
 </div>
+
 <script>
-(async function() {
-  const p = new URLSearchParams(window.location.search);
-  if (p.get("callback") === "1") {
-    const bank = p.get("bank"), ref = p.get("ref");
-    const rid = ref || localStorage.getItem("pending_req_" + bank);
-    if (rid && bank) { await doCallback(bank, rid); }
-    else { showMsg("Koppeling onvolledig. Probeer opnieuw.", "err"); }
-    history.replaceState({}, "", window.location.pathname);
+// Check if we're returning from bank authorization
+(async function checkCallback() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("callback") !== "1") {
+    loadStatus();
+    return;
   }
+
+  const bank = params.get("bank");
+  const ref  = params.get("ref");
+
+  // Nordigen puts the requisition ID in the URL as ?ref=...
+  if (!ref || !bank) {
+    // ref might be missing if Nordigen doesn't include it automatically
+    // In that case, read the stored pending requisition ID
+    const pending = localStorage.getItem("pending_req_" + bank);
+    if (pending && bank) {
+      await doCallback(bank, pending);
+    } else {
+      showMsg("Koppeling onvolledig. Probeer opnieuw.", "err");
+    }
+  } else {
+    await doCallback(bank, ref);
+  }
+
+  // Clean up URL
+  history.replaceState({}, "", window.location.pathname);
   loadStatus();
 })();
 
 async function connectBank(bank) {
   const btn = document.getElementById("btn-" + bank);
-  btn.disabled = true; btn.textContent = "Bezig...";
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⟳</span> Bezig...';
+
   try {
-    const res = await fetch("/.netlify/functions/bank-link?bank=" + bank);
+    const res = await fetch(`/.netlify/functions/bank-link?bank=${bank}`);
     const data = await res.json();
-    if (!res.ok || data.error) throw new Error(data.error || "Fout");
+
+    if (!res.ok || data.error) {
+      throw new Error(data.error || "Onbekende fout");
+    }
+
+    // Store requisition ID so we can use it after redirect
     localStorage.setItem("pending_req_" + bank, data.requisition_id);
+
+    // Redirect to bank login
     window.location.href = data.link;
-  } catch(e) {
-    showMsg("Fout: " + e.message, "err");
+
+  } catch (e) {
+    showMsg("Fout bij verbinden: " + e.message, "err");
     btn.disabled = false;
     btn.textContent = (bank === "rabobank" ? "Rabobank" : "Bunq") + " koppelen";
   }
 }
 
-async function doCallback(bank, rid) {
+async function connectBunqDirect() {
+  const btn = document.getElementById("btn-bunq");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⟳</span> Bunq koppelen...';
+
   try {
-    const res = await fetch("/.netlify/functions/bank-callback?bank=" + bank + "&ref=" + rid);
+    const res  = await fetch("/.netlify/functions/bunq-install");
     const data = await res.json();
-    if (!res.ok || data.error) throw new Error(data.error || "Mislukt");
+
+    if (!res.ok || data.error) {
+      // BUNQ_API_KEY niet ingesteld: instructiekaart tonen
+      if (res.status === 400) {
+        document.getElementById("card-bunq-info").style.display = "";
+        document.getElementById("card-bunq-info").scrollIntoView({ behavior: "smooth" });
+      }
+      throw new Error(data.error || "Onbekende fout");
+    }
+
+    // Lokale status bijwerken
+    const linked = JSON.parse(localStorage.getItem("linked_banks") || "{}");
+    linked["bunq"] = { linked_at: new Date().toISOString(), accounts: data.accounts_found };
+    localStorage.setItem("linked_banks", JSON.stringify(linked));
+
+    showMsg("Bunq succesvol gekoppeld! " + data.accounts_found + " rekening(en) gevonden.", "ok");
+    loadStatus();
+
+  } catch (e) {
+    showMsg("Fout bij Bunq koppelen: " + e.message, "err");
+    btn.disabled = false;
+    btn.textContent = "Bunq koppelen";
+  }
+}
+
+async function doCallback(bank, requisitionId) {
+  try {
+    const res = await fetch(`/.netlify/functions/bank-callback?bank=${bank}&ref=${requisitionId}`);
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      throw new Error(data.error || "Koppeling mislukt");
+    }
+
     if (data.success) {
-      const lnk = JSON.parse(localStorage.getItem("linked_banks") || "{}");
-      lnk[bank] = { linked_at: new Date().toISOString(), accounts: data.accounts_found };
-      localStorage.setItem("linked_banks", JSON.stringify(lnk));
+      // Save linked status locally for UI
+      const linked = JSON.parse(localStorage.getItem("linked_banks") || "{}");
+      linked[bank] = { linked_at: new Date().toISOString(), accounts: data.accounts_found };
+      localStorage.setItem("linked_banks", JSON.stringify(linked));
       localStorage.removeItem("pending_req_" + bank);
-      showMsg((bank === "rabobank" ? "Rabobank" : "Bunq") + " gekoppeld! " + data.accounts_found + " rekening(en).", "ok");
-    } else { showMsg(data.message || "Onvolledig.", "err"); }
-  } catch(e) { showMsg("Fout: " + e.message, "err"); }
+      showMsg(`${bank === "rabobank" ? "Rabobank" : "Bunq"} succesvol gekoppeld! ${data.accounts_found} rekening(en) gevonden.`, "ok");
+    } else {
+      showMsg(data.message || "Koppeling onvolledig.", "err");
+    }
+  } catch (e) {
+    showMsg("Fout na autorisatie: " + e.message, "err");
+  }
 }
 
 function loadStatus() {
-  const lnk = JSON.parse(localStorage.getItem("linked_banks") || "{}");
-  ["rabobank","bunq"].forEach(bank => {
-    const s = document.getElementById("status-" + bank);
-    const dot = s.querySelector(".dot"), span = s.querySelector("span");
-    const btn = document.getElementById("btn-" + bank);
-    const u = document.getElementById("btn-unlink-" + bank);
-    if (lnk[bank]) {
-      const d = new Date(lnk[bank].linked_at).toLocaleDateString("nl-NL",{day:"numeric",month:"long"});
-      s.className = "status linked"; dot.className = "dot green";
-      span.textContent = "Gekoppeld op " + d + " (" + (lnk[bank].accounts||"?") + " rekening(en))";
-      btn.textContent = "Opnieuw koppelen"; u.style.display = "";
+  const linked = JSON.parse(localStorage.getItem("linked_banks") || "{}");
+
+  for (const bank of ["rabobank", "bunq"]) {
+    const statusEl = document.getElementById("status-" + bank);
+    const btn      = document.getElementById("btn-" + bank);
+    const unlinkBtn = document.getElementById("btn-unlink-" + bank);
+    const dot      = statusEl.querySelector(".dot");
+    const span     = statusEl.querySelector("span");
+
+    if (linked[bank]) {
+      const d = new Date(linked[bank].linked_at);
+      const dateStr = d.toLocaleDateString("nl-NL", { day: "numeric", month: "long" });
+      statusEl.className = "status linked";
+      dot.className = "dot green";
+      span.textContent = `Gekoppeld op ${dateStr} (${linked[bank].accounts || "?"} rekening(en))`;
+      btn.textContent = "Opnieuw koppelen";
+      unlinkBtn.style.display = "";
     }
-  });
+  }
 }
 
 function unlinkBank(bank) {
-  if (!confirm("Koppeling " + bank + " verwijderen?")) return;
-  const lnk = JSON.parse(localStorage.getItem("linked_banks") || "{}");
-  delete lnk[bank]; localStorage.setItem("linked_banks", JSON.stringify(lnk));
-  loadStatus(); showMsg((bank==="rabobank"?"Rabobank":"Bunq") + " verwijderd.", "ok");
+  if (!confirm(`Weet je zeker dat je de ${bank} koppeling wilt verwijderen?`)) return;
+  const linked = JSON.parse(localStorage.getItem("linked_banks") || "{}");
+  delete linked[bank];
+  localStorage.setItem("linked_banks", JSON.stringify(linked));
+  loadStatus();
+  showMsg(`${bank === "rabobank" ? "Rabobank" : "Bunq"} koppeling verwijderd.`, "ok");
 }
 
-function showMsg(t, type) {
+function showMsg(text, type) {
   const el = document.getElementById("msg-global");
-  el.textContent = t; el.className = "msg " + type; el.style.display = "";
-  setTimeout(function(){ el.style.display="none"; }, 6000);
+  el.textContent = text;
+  el.className = "msg " + type;
+  el.style.display = "";
+  setTimeout(() => { el.style.display = "none"; }, 6000);
 }
 </script>
 </body>
